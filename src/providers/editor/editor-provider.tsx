@@ -10,7 +10,7 @@ export type EditorElement = {
   styles: React.CSSProperties
   name: string
   type: EditorBtns
-  content: EditorElement[] | {src?:string,innerText?:string,href?:string}
+  content: EditorElement[] | {src?:string,innerText?:string,href?:string, alt?:string, iconType?:string}
 }
 
 export type Editor = {

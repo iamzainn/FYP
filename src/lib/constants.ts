@@ -11,3 +11,9 @@ export type EditorBtns =
   | 'image'
   | null
   | '3Col'
+  |'button'
+  |'image'
+  |'divider'
+  | 'spacer'
+  | 'badge'
+  | 'icon'

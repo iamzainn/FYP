@@ -7,6 +7,12 @@ import { TypeIcon, Youtube } from "lucide-react"
 import { LinkPlaceholder } from "./LinkPlaceholder"
 import TwoColumnsPlaceholder from "./BUILDER/TwoColPlaceHolder"
 import ContactFormComponentPlaceholder from "./ContactFormComponentPlaceholder"
+import ButtonPlaceholder from "./ButtonPlaceholder"
+import ImagePlaceholder from "./BUILDER/ImagePlaceholder"
+import DividerPlaceholder from "./BUILDER/DividerPlaceholder"
+import SpacerPlaceholder from "./BUILDER/SpacerPlaceholder"
+import BadgePlaceholder from "./BadgePlaceholder"
+import IconPlaceholder from "./BUILDER/IconPlaceholder"
 
 
 const TextPlaceholder = () => {
@@ -111,6 +117,48 @@ const ComponentsTab = () => {
       id: 'contactForm',
       group: 'elements',
     },
+    {
+      Component: <ButtonPlaceholder />,
+      label: 'Button',
+      id: 'button',
+      group: 'elements',
+    },
+    {
+      Component: <ImagePlaceholder />,
+      label: 'Image',
+      id: 'image',
+      group: 'elements',
+    },
+    // Add to elements array
+{
+  Component: <BadgePlaceholder />,
+  label: 'Badge',
+  id: 'badge',
+  group: 'elements',
+},
+{
+  Component: <DividerPlaceholder />,
+  label: 'Divider',
+  id: 'divider',
+  group: 'elements',
+},
+
+
+// Add to elements array
+{
+  Component: <IconPlaceholder />,
+  label: 'Icon',
+  id: 'icon',
+  group: 'elements',
+},
+
+// Add to elements array
+{
+  Component: <SpacerPlaceholder />,
+  label: 'Spacer',
+  id: 'spacer',
+  group: 'elements',
+},
     
   ]
 

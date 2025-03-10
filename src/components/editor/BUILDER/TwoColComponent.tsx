@@ -57,7 +57,7 @@ const TwoColComponent = ({ element }: TwoColComponentProps) => {
               containerId: id,
               elementDetails: {
                 content: {
-                  src: 'https://www.youtube.com/embed/6omuUOZcWL0?si=I-4R3MiJiej3cZqx',
+                  src: 'https://www.youtube.com/embed/zR7P9EcOQRM?si=OGsTtd1qOQmMzujJ',
                 },
                 id: v4(),
                 name: 'Video',
@@ -145,6 +145,145 @@ const TwoColComponent = ({ element }: TwoColComponentProps) => {
         name: 'Contact Form',
         styles: {},
         type: 'contactForm',
+      },
+    },
+  })
+  break;
+  case 'button':
+  dispatch({
+    type: 'ADD_ELEMENT',
+    payload: {
+      containerId: id,
+      elementDetails: {
+        content: {
+          innerText: 'Click me',
+          href: '#',
+        },
+        id: v4(),
+        name: 'Button',
+        styles: {
+          backgroundColor: '#0091ff',
+          color: 'white',
+          borderRadius: '4px',
+          padding: '8px 16px',
+          fontWeight: 'bold',
+          border: 'none',
+          cursor: 'pointer',
+          ...defaultStyles,
+        },
+        type: 'button',
+      },
+    },
+  })
+  break;
+  case 'image':
+  dispatch({
+    type: 'ADD_ELEMENT',
+    payload: {
+      containerId: id,
+      elementDetails: {
+        content: {
+          src: 'https://placehold.co/600x400?text=Add+Image',
+          alt: 'Product image',
+        },
+        id: v4(),
+        name: 'Image',
+        styles: {
+          objectFit: 'cover',
+          borderRadius: '8px',
+          width: '100%',
+          height: 'auto',
+          ...defaultStyles,
+        },
+        type: 'image',
+      },
+    },
+  })
+  break;
+  case 'divider':
+  dispatch({
+    type: 'ADD_ELEMENT',
+    payload: {
+      containerId: id,
+      elementDetails: {
+        content: {},
+        id: v4(),
+        name: 'Divider',
+        styles: {
+          backgroundColor: '#e5e7eb',
+          height: '1px',
+          width: '100%',
+          margin: '1rem 0',
+        },
+        type: 'divider',
+      },
+    },
+  })
+  break;
+  case 'spacer':
+  dispatch({
+    type: 'ADD_ELEMENT',
+    payload: {
+      containerId: id,
+      elementDetails: {
+        content: {},
+        id: v4(),
+        name: 'Spacer',
+        styles: {
+          height: '2rem',
+          width: '100%',
+        },
+        type: 'spacer',
+      },
+    },
+  })
+  break;
+  case 'badge':
+  dispatch({
+    type: 'ADD_ELEMENT',
+    payload: {
+      containerId: id,
+      elementDetails: {
+        content: {
+          innerText: 'New',
+        },
+        id: v4(),
+        name: 'Badge',
+        styles: {
+          backgroundColor: '#0091ff',
+          color: 'white',
+          borderRadius: '9999px',
+          padding: '0.25rem 0.5rem',
+          fontSize: '0.75rem',
+          fontWeight: 'bold',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        type: 'badge',
+      },
+    },
+  })
+  break;
+  case 'icon':
+  dispatch({
+    type: 'ADD_ELEMENT',
+    payload: {
+      containerId: id,
+      elementDetails: {
+        content: {
+          iconType: 'user',
+        },
+        id: v4(),
+        name: 'Icon',
+        styles: {
+          fontSize: '24px',
+          color: '#0091ff',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        type: 'icon',
       },
     },
   })

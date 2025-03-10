@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+  
+  
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  THREE_D_MODEL
+  DOCUMENT
+}
+
+model User {
+  id         String    @id @default(uuid())
+  email      String    @unique
+  name       String
+  avatarUrl  String    @db.Text
+  stores     Store[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Store {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  products    Product[]
+  media       Media[]
+  pages       Page[]
+  storePages  StorePage[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([userId])
+}
+
+model Product {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  price       Decimal
+  store       Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId     String
+  media       ProductMedia[]
+  inventory   Inventory?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([storeId])
+  
+}
+
+model Media {
+  id          String      @id @default(uuid())
+  url         String      @db.Text
+  type        MediaType
+  altText     String?
+  width       Int?
+  height      Int?
+  mimeType    String?
+  fileSize    Int?
+  store       Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId     String
+  products    ProductMedia[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([storeId])
+}
+
+// Join table for product-media many-to-many relationship
+model ProductMedia {
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  media     Media   @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  productId String
+  mediaId   String
+
+  @@id([productId, mediaId])
+  @@index([mediaId])
+}
+
+model Page {
+  id          String     @id @default(uuid())
+  title       String
+  order       Int        @default(0)
+  slug        String     @unique
+  path        String
+  content     String     @db.Text
+  store       Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId     String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([storeId])
+}
+
+model StorePage {
+  id          String     @id @default(uuid())
+  title       String
+  order       Int        @default(0)
+  content     String     @db.Text // JSON stringified content for the editor
+  published   Boolean    @default(false)
+  store       Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId     String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([storeId])
+}
+
+model Inventory {
+  id         String   @id @default(uuid())
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String   @unique
+  quantity   Int
+  sku        String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

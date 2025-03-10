@@ -1,0 +1,240 @@
+----EDA UNIVARIATE :
+RAM:
+Distribution Type: Rather than a normal distribution, your RAM data shows a discrete multimodal distribution with strong peaks at 8GB (33%), 6GB (22%), and 12GB (21%). The positive skewness value (0.565) confirms it's right-skewed.
+Outliers Interpretation: The 25.25% "potential outliers" reported by the boxplot are high because the IQR (interquartile range) is quite small (just 2GB). For discrete data like RAM sizes, standard outlier detection via IQR isn't always appropriate - these aren't necessarily errors but valid premium device configurations.
+Equal 50th & 75th Percentiles: This doesn't indicate right skewness, but rather shows a plateau in the distribution - a large portion of phones (at least 25%) have exactly 8GB of RAM. This suggests 8GB was a standard configuration across many models.
+Additional Key Insights
+Distinct Market Segments: The distribution reveals clear market segmentation:
+Budget segment (3-4GB): ~19.5% of devices
+Mid-range segment (6-8GB): ~55% of devices
+Premium segment (12-16GB): ~24% of devices
+Evolution Indicator: The small percentage of 10GB RAM devices (0.11%) suggests this was not a standard configuration in the market.
+Industry Standards: The high concentration around 8GB (33%) indicates this was an industry standard specification, likely representing the "sweet spot" for performance vs. cost.
+Recommendations for Future Univariate Analysis
+Compare with Launch Year: For RAM, examining how the distribution changes across years would reveal memory size evolution trends.
+Consider Transformations: If you need to normalize this data for modeling, a log transformation might help with the right skew.
+Segmentation Opportunity: These natural groupings in RAM could be used to create device category features (budget/mid/premium).
+Missing Value Strategy: With no missing values in RAM, this could be a reliable feature for imputing other missing specifications.
+-----
+Battery_mah:
+Key Insights from Battery Capacity Distribution
+Strong Industry Standardization: The extremely close median (5000 mAh) and 75th percentile (5050 mAh) reveal that 5000 mAh has become a strong industry standard for battery capacity.
+Significant Right Skew: The high skewness (1.87) and kurtosis (4.96) confirm your observation about right skew and heavy tails - premium phones with ultra-high capacity batteries form a distinct segment.
+Natural Battery Tiers: The distribution reveals three main battery capacity tiers:
+Economy tier (~3200-4400 mAh): 25% of devices
+Standard tier (~5000 mAh): Around 50% of devices cluster very tightly here
+Premium tier (>6000 mAh): About 15-20% of devices, marketed as "long-lasting"
+Missing Pattern Consideration: The 9.18% missing values should be examined for patterns (random or systematic) before imputation.
+Imputation Strategy Recommendations
+For this distribution, I recommend:
+
+Median Imputation (5000 mAh): This is likely the best approach because:
+The distribution has a strong central tendency at 5000 mAh
+Mean (5024 mAh) is pulled higher by outliers
+The median represents the most common battery capacity in the market
+Conditional Imputation: Consider imputing based on:
+Phone category (gaming phones tend to have larger batteries)
+Year of release (newer phones generally have larger batteries)
+Screen size (larger screens typically need bigger batteries)
+Outlier Handling: The "outliers" (especially in the 7000-11000 mAh range) are valid data points representing power-focused devices. Consider:
+Creating a "battery_capacity_category" feature rather than removing them
+For modeling purposes, a log transformation could help normalize the distribution
+This strong peak at 5000 mAh makes the data well-suited for median imputation, which will preserve the distribution's shape better than mean imputation would.
+---------
+screen size:
+Key Insights on Screen Size Distribution
+Bimodal Distribution: What we're seeing is actually a bimodal distribution representing two distinct device categories:
+Smartphones (5.0-7.0 inches): The dominant peak (~75% of devices)
+Tablets/Phablets (8.0-14.6 inches): The right tail (~20-25% of devices)
+Extremely Tight Standard Range: The remarkably small IQR (0.28) indicates strong standardization among smartphones, with most clustering very tightly around 6.5-6.8 inches.
+Market Significance: This tight clustering reveals a strong consumer/manufacturer consensus on optimal smartphone screen size.
+False "Outliers": The values labeled as outliers (17.61%) are not data errors but represent a legitimate second market segment (tablets). The boxplot method flags them due to the extremely narrow IQR.
+Ideal Approach to Imputation and Outlier Handling
+As an expert data scientist, your goal should NOT be to force normality or remove "outliers," but rather to:
+
+Preserve Distribution Shape: The bimodal nature reflects real market segments; transforming to a normal distribution would destroy valuable information.
+Segment-Aware Imputation:
+For missing smartphone screen sizes: Impute with median of smartphone segment (6.67")
+For missing tablet screen sizes: Impute with median of tablet segment (~10")
+Feature Engineering over Removal:
+Create a binary "device_type" feature (smartphone vs. tablet)
+This preserves the information while addressing the distribution challenge
+Transformation for Modeling:
+If needed for specific algorithms, consider a binning approach or categorical transformation rather than outlier removal
+Context-Aware Analysis: When analyzing correlations or building models, consider analyzing these segments separately or including interaction terms.
+This approach preserves the meaningful information in your data's natural distribution while addressing the statistical challenges it presents. The goal isn't to force normality but to represent the underlying reality of your data while making it suitable for analysis
+
+
+weight:
+Extreme Device Type Separation: What we're seeing is another bimodal distribution, but with even more pronounced separation:
+Standard smartphones (135-250g): ~85-90% of devices
+Tablets/larger devices (400-732g): ~10-15% of devices
+Remarkably Tight Smartphone Clustering: The extraordinarily small IQR (24g) shows incredible standardization in smartphone weight - 50% of all devices fall within just a 24-gram range!
+Misleading Average: The mean (228.9g) falls in a "valley" between the two modes, making it a poor representation of either device category.
+Sharp Boundary: Notice the major jump between the 75th percentile (209g) and 90th percentile (423.6g) - this clean separation indicates distinct product categories.
+Recommendations for Mobile Weight Feature
+Create Device Type Feature: Rather than treating as outliers, create a binary feature:
+CopyInsert
+df['device_type'] = df['Mobile Weight'].apply(lambda x: 'Tablet' if x > 300 else 'Smartphone')
+Segment-Specific Analysis: When modeling price, consider:
+Using device type as a categorical predictor
+Creating separate models for smartphones vs. tablets
+Including interaction terms (e.g., weight×device_type)
+Weight Ratio Feature: Consider creating a "weight-to-screen-size ratio" feature - this will normalize the weight and provide insight into device density/quality.
+For Visualization: Use logarithmic scales when plotting device weight to better show the full distribution.
+This pattern of tight clustering in the smartphone category with a separate cluster for tablets is consistent across multiple features (weight, screen size). This strong segmentation will be important to acknowledge in your modeling approach.
+
+Processor , front camera , back camera :
+
+You're absolutely right that simple encoding won't work well here. The processor data has several key patterns:
+
+Manufacturer Families: Clear groupings by chip maker:
+Qualcomm Snapdragon (high-end, mid-range, budget tiers)
+MediaTek (Dimensity, Helio G-series)
+Apple A-series (flagship only)
+Samsung Exynos
+Hierarchical Structure: There's a clear performance hierarchy that should be preserved:
+Generational improvements (Snapdragon 8 Gen 1 → Gen 2 → Gen 3)
+Numerical tiers (800-series > 700-series > 600-series)
+Recommended Approach:
+Extract manufacturer (create processor_brand feature)
+Extract generation/tier (create processor_tier feature with ordinal values)
+Consider a benchmark-based mapping for true performance comparison
+Missing Values: 9.84% missing - use device category, RAM, and year to guide imputation
+Camera Analysis
+Front Camera
+The front camera shows clear market segmentation:
+
+Budget tier: 5-8MP (25%)
+Mid-range tier: 12-16MP (35%)
+Premium tier: 32-50MP (26%)
+Back Camera (91 unique values)
+This reveals two critical dimensions:
+
+Primary Camera Resolution: Clear clustering at 50MP, 48MP, 64MP, 108MP
+Camera Count: From 1 to 4+ cameras (visible in the combinations)
+Recommended Feature Engineering:
+
+Create camera_count feature (already done)
+Group primary camera MP into tiers (e.g., <12MP, 13-20MP, 48-50MP, >64MP)
+Create a boolean feature for ultrawide presence (appears in many combinations)
+Creating the Phone Category Feature
+Based on all univariate analyses, I recommend a scoring system:
+
+Budget: Lower RAM (3-4GB), single/dual camera, MediaTek Helio G-series/lower Snapdragon
+Mid-range: Medium RAM (6GB), triple camera, mid-tier Snapdragon/Dimensity
+Flagship: High RAM (8-12GB), premium processors (Snapdragon 8-series, A-series), quad camera
+This approach will create meaningful market segments that align with manufacturer positioning and should significantly improve your price prediction models.
+-----
+Back Camera Count Analysis - Market Evolution Insights
+The Back Camera Count distribution provides excellent insights into smartphone market evolution and segmentation:
+
+Key Insights
+Market Transition Period: This distribution shows a market in transition from single-camera setups to multi-camera systems:
+Single camera remains dominant (56.07%) but is clearly being phased out in newer devices
+Almost half the market (43.93%) now has multi-camera setups
+Clear Segmentation Indicator: Camera count serves as an excellent proxy for device tier:
+Single camera (56.07%): Entry-level/budget and older devices
+Dual camera (28.31%): Standard mid-range configuration
+Triple camera (13.66%): Premium segment marker
+Quad camera (1.97%): Ultra-premium/flagship exclusive feature
+Right-Skewed Distribution: The positive skewness (1.03) indicates the market is moving toward more cameras, with quad-camera setups representing the cutting edge.
+Perfect Categorical Feature: This is a natural ordinal categorical feature that doesn't require transformation - the count directly correlates with device positioning.
+Market Implications
+Marketing Differentiation: Camera count has become a key marketing feature that visually differentiates devices by tier (often prominently displayed in the design)
+Feature Correlation: This will likely correlate strongly with:
+Price (more cameras = higher price)
+Processor tier (premium processors pair with multi-camera systems)
+RAM (higher RAM devices tend to have more cameras)
+Launch year (newer phones trend toward more cameras)
+Feature Engineering Value
+The camera_system classification I previously suggested would be particularly valuable here, as it:
+
+Translates a numeric count into meaningful market positioning
+Creates an intuitive feature for your phone category classification
+Provides clear differentiation between market segments
+
+Year:
+Your dataset shows a clear recency bias in the phone records, which has important implications for your price prediction model:
+
+Key Insights
+Strong Recency Concentration:
+67.65% of all devices in the dataset are from 2022-2024
+2024 alone represents nearly one-third (31.80%) of all devices
+Very few older devices (only 4.05% from 2014-2018)
+Negative Skewness (-0.98):
+Distribution is skewed toward recent years
+Median (2023) is higher than mean (2022.21)
+Low kurtosis (0.67) indicates a relatively flat peak
+Data Relevance Advantage:
+The dominance of recent models is actually advantageous for a price prediction task
+Models trained on this data will be most accurate for current and near-future predictions
+Feature Engineering Recommendations
+This launch year distribution suggests several valuable approaches:
+
+Device Age Feature:
+python
+CopyInsert
+df['device_age'] = 2025 - df['Launched Year']
+This creates a more intuitive feature that directly correlates with depreciation.
+Generation Grouping:
+python
+CopyInsert
+def phone_generation(year):
+    if year <= 2018:
+        return 'Legacy'
+    elif year <= 2021:
+        return 'Previous Generation'
+    else:
+        return 'Current Generation'
+        
+df['phone_generation'] = df['Launched Year'].apply(phone_generation)
+Year-Adjusted Specifications:
+What was "flagship" in 2019 might be "mid-range" in 2024
+Consider creating relative specification scores within each year
+Model Design Implications
+Time-Based Interactions: Include interaction terms between year and specifications
+Example: The value of 8GB RAM has decreased over time as it became standard
+Year-Based Stratification: Consider separate models or stratified sampling by year groups for more accurate predictions
+Trend Analysis Opportunity: The dataset spans enough years to potentially model specification evolution trends
+The strong recency focus will help your model be more relevant for current pricing predictions while still having enough historical data to understand depreciation patterns
+----
+
+prcing
+Price Distribution Analysis Across Markets
+Cross-Market Price Insights
+All four markets show strong right-skewed distributions, confirming a common pattern in consumer electronics pricing: many budget/mid-range options with fewer premium devices creating long right tails.
+
+1. Pakistan Market (PKR)
+Three-Tier Segmentation: Clear budget (<55K PKR), mid-range (55K-180K PKR), and premium (>180K PKR) segments
+Premium Weighting: Mean (127K) much higher than median (90K) indicating substantial premium device representation
+Wide Price Range: 15,999 to 604,999 PKR (38x difference) showing extreme market segmentation
+Missing Data: Moderate (8.20%) suggesting good market coverage
+2. Indian Market (INR)
+Budget Dominance: Concentration of devices under 75K INR (75th percentile)
+Value Market: Lower average prices relative to specs compared to other markets
+Price Points: Strong clustering around key psychological price points (29,999 is the mode)
+Lower Premium Ceiling: High-end stops at ~175K INR (99th percentile), lower absolute premium than Pakistan
+3. Chinese Market (CNY)
+Complete Data: Only market with zero missing values, suggesting excellent coverage
+Competitive Pricing: Lower median (2,900 CNY) relative to specs compared to other markets
+Compressed Range: Despite having the full range of device types, the price range is more compressed
+Budget Emphasis: Strong concentration in 1,799-5,499 CNY range (IQR)
+4. US Market (USD)
+Data Quality Concerns:
+Extreme outliers (max 39,622 USD seems unrealistic)
+Extremely high skewness (22.76) and kurtosis (555.58)
+Missing data (28.85%) suggests incomplete market coverage
+Core Range: Most devices between $279-$899 looks realistic and matches market patterns
+Market-Specific Modeling Implications
+Transformation Needs: All price variables will need log-transformation to address skewness
+Market-Specific Pricing Factors:
+Different regions likely value features differently (e.g., camera count may correlate more strongly with price in India)
+The premium segment size varies significantly between markets
+Data Quality Hierarchy:
+China (best) → India → Pakistan → USD (most problematic)
+Consider focusing initial models on markets with better data quality
+Price Point Clustering:
+All markets show evidence of psychological price points (e.g., 79,999 PKR rather than 80,000)
+May need categorical price tier features rather than pure regression
+This analysis completes your comprehensive univariate exploration. You're now well-positioned to move into feature engineering with a solid understanding of both the technical specifications and pricing structures across markets

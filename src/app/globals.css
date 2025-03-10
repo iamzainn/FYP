@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100vh;
+}
+
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* 
+R (0)
+G (110)
+B (255)
+*/
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .dotPattern {
+    background-image: radial-gradient(rgb(35, 40, 68) 1px, transparent 1px);
+    background-size: 25px 25px;
+  }
+  
+  .use-automation-zoom-in {
+    animation: automation-zoom-in 0.5s;
+  }
+  
+  /* Complete scrollbar customization - Remove all buttons and handles */
+  /* For Webkit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent !important;
+    border-radius: 0 !important;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 6px !important;
+    border: none !important;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Remove all scrollbar buttons completely */
+  ::-webkit-scrollbar-button,
+  ::-webkit-scrollbar-button:single-button,
+  ::-webkit-scrollbar-button:start,
+  ::-webkit-scrollbar-button:end,
+  ::-webkit-scrollbar-button:horizontal,
+  ::-webkit-scrollbar-button:vertical,
+  ::-webkit-scrollbar-button:increment,
+  ::-webkit-scrollbar-button:decrement,
+  ::-webkit-scrollbar-corner {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  /* For Firefox */
+  * {
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent !important;
+  }
+
+  /* For IE and Edge legacy */
+  body {
+    -ms-overflow-style: none !important;
+  }
+}
+
+@keyframes automation-zoom-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@layer base {
+  :root {
+    --background: 216 100% 98.04%;
+    --foreground: 213.6 100% 4.9%;
+    
+    --primary: 214.12 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    
+    --card: 216 100% 98.04%;
+    --card-foreground: 213.5 100% 4.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 213.6 100% 4.9%;
+    
+    --secondary: 214.74 100% 92.55%;
+    --secondary-foreground: 216 100% 0.98%;
+    
+    --muted: 213.6 100% 95.1%;
+    --muted-foreground: 0 0% 10%;
+    
+    --accent: 213.6 100% 95.1%;
+    --accent-foreground: 214.12 100% 50%;
+    
+    --destructive: 0 84.2% 50.2%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 0 0% 90.2%;
+    --input: 0 0% 90.2%;
+    --ring: 214.12 100% 50%;
+    --radius: 0.5rem;
+  }
+  
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

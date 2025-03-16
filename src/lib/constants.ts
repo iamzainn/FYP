@@ -17,3 +17,4 @@ export type EditorBtns =
   | 'spacer'
   | 'badge'
   | 'icon'
+  | 'productCard'

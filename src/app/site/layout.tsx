@@ -2,7 +2,7 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import React from 'react'
-import { SiteNav } from '@/components/site/SiteNav'
+// import { SiteNav } from '@/components/site/SiteNav'
 const SiteLayout = ({children}:{children:React.ReactNode}) => {
   console.log("site layout")
   return (

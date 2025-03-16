@@ -1,22 +1,88 @@
 'use client'
 
 import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
-import React from 'react'
-
+import React, { CSSProperties, useEffect } from 'react'
 import clsx from 'clsx'
 import Recursive from './recursive'
 import { Badge } from '@/components/ui/badge'
 import { Trash } from 'lucide-react'
-import { v4 } from 'uuid'
-import { defaultStyles } from './Container'
+import { useDropHandler } from '@/lib/fn'
+import { EditorBtns } from '@/lib/constants'
 
 interface TwoColComponentProps {
   element: EditorElement
 }
 
 const TwoColComponent = ({ element }: TwoColComponentProps) => {
+  console.log("TwoColComponent rendered")
   const { id, content, styles, type } = element
   const { dispatch, state } = useEditor()
+  const dropHandler = useDropHandler()
+
+  useEffect(() => {
+    // Only run this effect when device changes
+    if (element.type === '2Col') {
+      // If the flex direction has been manually set to something other than row/column
+      // (like row-reverse or column-reverse), preserve that user choice
+      const isNonStandardFlexDirection = 
+        styles?.flexDirection === 'row-reverse' || 
+        styles?.flexDirection === 'column-reverse';
+        
+      // Only auto-update if it's not a custom value set by user
+      if (!isNonStandardFlexDirection) {
+        const updatedStyles = {
+          ...styles,
+          flexDirection: state.editor.device === 'Mobile' ? 'column' : 'row',
+        }
+
+        if (styles.flexDirection !== updatedStyles.flexDirection) {
+          dispatch({
+            type: 'UPDATE_ELEMENT',
+            payload: {
+              elementDetails: {
+                ...element,
+                styles: updatedStyles as CSSProperties,
+              },
+            },
+          })
+          
+          if (Array.isArray(content) && content.length === 2) {
+            const leftContainer = content[0]
+            const rightContainer = content[1]
+            
+            const childWidth = state.editor.device === 'Mobile' ? '100%' : '100%'
+            
+            dispatch({
+              type: 'UPDATE_ELEMENT',
+              payload: {
+                elementDetails: {
+                  ...leftContainer,
+                  styles: {
+                    ...leftContainer.styles,
+                    width: childWidth,
+                    marginBottom: state.editor.device === 'Mobile' ? '1rem' : '0',
+                  },
+                },
+              },
+            })
+            
+            dispatch({
+              type: 'UPDATE_ELEMENT',
+              payload: {
+                elementDetails: {
+                  ...rightContainer,
+                  styles: {
+                    ...rightContainer.styles,
+                    width: childWidth,
+                  },
+                },
+              },
+            })
+          }
+        }
+      }
+    }
+  }, [state.editor.device]) // Only depend on device changes
 
   const handleOnClickBody = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -31,266 +97,7 @@ const TwoColComponent = ({ element }: TwoColComponentProps) => {
   const handleOnDrop = (e: React.DragEvent, id: string) => {
     e.stopPropagation()
     const componentType = e.dataTransfer.getData('componentType')
-    
-    switch(componentType) {
-        case 'text':
-          dispatch({
-            type: 'ADD_ELEMENT',
-            payload: {
-              containerId: id,
-              elementDetails: {
-                content: {
-                  innerText: 'Text Element',
-                },
-                id: v4(),
-                name: 'Text',
-                styles: { ...defaultStyles },
-                type: 'text',
-              },
-            },
-          })
-          break
-        case 'video':
-          dispatch({
-            type: 'ADD_ELEMENT',
-            payload: {
-              containerId: id,
-              elementDetails: {
-                content: {
-                  src: 'https://www.youtube.com/embed/zR7P9EcOQRM?si=OGsTtd1qOQmMzujJ',
-                },
-                id: v4(),
-                name: 'Video',
-                styles: { ...defaultStyles },
-                type: 'video',
-              },
-            },
-          })
-          break
-        case 'container':
-          dispatch({
-            type: 'ADD_ELEMENT',
-            payload: {
-              containerId: id,
-              elementDetails: {
-                content: [],
-                id: v4(),
-                name: 'Container',
-                styles: { ...defaultStyles },
-                type: 'container',
-              },
-            },
-          })
-          break
-          // Inside handleDrop function
-  case 'link':
-    dispatch({
-      type: 'ADD_ELEMENT',
-      payload: {
-        containerId: id,
-        elementDetails: {
-          content: {
-            innerText: 'Link Element',
-            href: '#',
-          },
-          id: v4(),
-          name: 'Link',
-          styles: {
-            color: 'black',
-            ...defaultStyles,
-          },
-          type: 'link',
-        },
-      },
-    })
-    break;
-    case '2Col':
-    dispatch({
-      type: 'ADD_ELEMENT',
-      payload: {
-        containerId: id,
-        elementDetails: {
-          content: [
-            {
-              content: [],
-              id: v4(),
-              name: 'Container',
-              styles: { ...defaultStyles, width: '100%' },
-              type: 'container',
-            },
-            {
-              content: [],
-              id: v4(), 
-              name: 'Container',
-              styles: { ...defaultStyles, width: '100%' },
-              type: 'container',
-            },
-          ],
-          id: v4(),
-          name: 'Two Columns',
-          styles: { ...defaultStyles, display: 'flex' },
-          type: '2Col',
-        },
-      },
-    })
-    break;
-    case 'contactForm':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: [],
-        id: v4(),
-        name: 'Contact Form',
-        styles: {},
-        type: 'contactForm',
-      },
-    },
-  })
-  break;
-  case 'button':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {
-          innerText: 'Click me',
-          href: '#',
-        },
-        id: v4(),
-        name: 'Button',
-        styles: {
-          backgroundColor: '#0091ff',
-          color: 'white',
-          borderRadius: '4px',
-          padding: '8px 16px',
-          fontWeight: 'bold',
-          border: 'none',
-          cursor: 'pointer',
-          ...defaultStyles,
-        },
-        type: 'button',
-      },
-    },
-  })
-  break;
-  case 'image':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {
-          src: 'https://placehold.co/600x400?text=Add+Image',
-          alt: 'Product image',
-        },
-        id: v4(),
-        name: 'Image',
-        styles: {
-          objectFit: 'cover',
-          borderRadius: '8px',
-          width: '100%',
-          height: 'auto',
-          ...defaultStyles,
-        },
-        type: 'image',
-      },
-    },
-  })
-  break;
-  case 'divider':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {},
-        id: v4(),
-        name: 'Divider',
-        styles: {
-          backgroundColor: '#e5e7eb',
-          height: '1px',
-          width: '100%',
-          margin: '1rem 0',
-        },
-        type: 'divider',
-      },
-    },
-  })
-  break;
-  case 'spacer':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {},
-        id: v4(),
-        name: 'Spacer',
-        styles: {
-          height: '2rem',
-          width: '100%',
-        },
-        type: 'spacer',
-      },
-    },
-  })
-  break;
-  case 'badge':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {
-          innerText: 'New',
-        },
-        id: v4(),
-        name: 'Badge',
-        styles: {
-          backgroundColor: '#0091ff',
-          color: 'white',
-          borderRadius: '9999px',
-          padding: '0.25rem 0.5rem',
-          fontSize: '0.75rem',
-          fontWeight: 'bold',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-        type: 'badge',
-      },
-    },
-  })
-  break;
-  case 'icon':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {
-          iconType: 'user',
-        },
-        id: v4(),
-        name: 'Icon',
-        styles: {
-          fontSize: '24px',
-          color: '#0091ff',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-        type: 'icon',
-      },
-    },
-  })
-  break;
-        default:
-          break
-      }
+    dropHandler(componentType as EditorBtns, id)
   }
 
   const handleDragOver = (e: React.DragEvent) => {

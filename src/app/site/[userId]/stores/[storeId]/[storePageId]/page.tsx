@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button' // Assuming you have Shadcn UI components
 import Link from 'next/link'
 
@@ -13,7 +13,7 @@ import Link from 'next/link'
 export default function StorePageView() {
   console.log("here")
   const params = useParams()
-  const router = useRouter()
+  // const router = useRouter()
   const userId = params.userId as string
   const storeId = params.storeId as string
   const storePageId = params.storePageId as string

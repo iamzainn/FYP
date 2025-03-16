@@ -11,6 +11,8 @@ import DividerComponent from './DividerComponent'
 import SpacerComponent from '../SpacerComponent'
 
 import BadgeComponent from '../BadgeComponent'
+import ProductCardComponent from '../Compound/Components/ProductCardComponent'
+import TwoColComponent from './TwoColComponent'
 
 
 
@@ -30,24 +32,27 @@ const Recursive = ({ element }: Props) => {
     case 'container':
       return <Container element={element} />
     case '2Col':
-      return <Container element={element} />
+      return <TwoColComponent element={element} />
     case 'link':
       return <LinkComponent key={element.id} element={element} />
     case 'contactForm':
       return <ContactFormComponent key={element.id} element={element} />
-      case 'button':
+    case 'button':
       return <ButtonComponent element={element} />
-      case 'image':
-        return <ImageComponent element={element} /> 
-      case 'divider':
-          return <DividerComponent element={element} />
-          case 'spacer':
-            return <SpacerComponent element={element} />
-            
+    case 'image':
+      return <ImageComponent element={element} />
+    case 'divider':
+      return <DividerComponent element={element} />
+    case 'spacer':
+      return <SpacerComponent element={element}
+      />
+    case 'productCard':
+      return <ProductCardComponent element={element} />
 
-            
-            case 'badge':
-              return <BadgeComponent element={element} />            
+
+
+    case 'badge':
+      return <BadgeComponent element={element} />
     default:
       return null
   }

@@ -2,11 +2,13 @@
 
 import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
 import React from 'react'
-import { v4 } from 'uuid'
+
 import clsx from 'clsx'
 import Recursive from './recursive'
 import { Badge } from '@/components/ui/badge'
 import { Trash } from 'lucide-react'
+import { EditorBtns } from '@/lib/constants'
+import { useDropHandler } from '@/lib/fn'
 
 interface ContainerProps {
     element: EditorElement
@@ -23,7 +25,11 @@ export const defaultStyles: React.CSSProperties = {
 const Container = ({ element }: ContainerProps) => {
   const { id, content,styles, type } = element
 
+
   const { dispatch, state } = useEditor()
+
+  // Get the drop handler function
+  const dropHandler = useDropHandler()
 
   const handleOnClickBody = (e:React.MouseEvent)=>{
     e.stopPropagation();
@@ -39,268 +45,9 @@ const Container = ({ element }: ContainerProps) => {
     e.stopPropagation()
     console.log("element drop in container")
     const componentType = e.dataTransfer.getData('componentType')
-
     
-    
-    switch(componentType) {
-      case 'text':
-        dispatch({
-          type: 'ADD_ELEMENT',
-          payload: {
-            containerId: id,
-            elementDetails: {
-              content: {
-                innerText: 'Text Element',
-              },
-              id: v4(),
-              name: 'Text',
-              styles: { ...defaultStyles },
-              type: 'text',
-            },
-          },
-        })
-        break
-      case 'video':
-        dispatch({
-          type: 'ADD_ELEMENT',
-          payload: {
-            containerId: id,
-            elementDetails: {
-              content: {
-                src: 'https://www.youtube.com/embed/zR7P9EcOQRM?si=OGsTtd1qOQmMzujJ',
-              },
-              id: v4(),
-              name: 'Video',
-              styles: { ...defaultStyles },
-              type: 'video',
-            },
-          },
-        })
-        break
-      case 'container':
-        dispatch({
-          type: 'ADD_ELEMENT',
-          payload: {
-            containerId: id,
-            elementDetails: {
-              content: [],
-              id: v4(),
-              name: 'Container',
-              styles: { ...defaultStyles },
-              type: 'container',
-            },
-          },
-        })
-        break
-        // Inside handleDrop function
-case 'link':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {
-          innerText: 'Link Element',
-          href: '#',
-        },
-        id: v4(),
-        name: 'Link',
-        styles: {
-          color: 'black',
-          ...defaultStyles,
-        },
-        type: 'link',
-      },
-    },
-  })
-  break;
-  case '2Col':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: [
-          {
-            content: [],
-            id: v4(),
-            name: 'Container',
-            styles: { ...defaultStyles, width: '100%' },
-            type: 'container',
-          },
-          {
-            content: [],
-            id: v4(), 
-            name: 'Container',
-            styles: { ...defaultStyles, width: '100%' },
-            type: 'container',
-          },
-        ],
-        id: v4(),
-        name: 'Two Columns',
-        styles: { ...defaultStyles, display: 'flex' },
-        type: '2Col',
-      },
-    },
-  })
-  break;
-  case 'contactForm':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: [],
-        id: v4(),
-        name: 'Contact Form',
-        styles: {},
-        type: 'contactForm',
-      },
-    },
-  })
-  break;
-  case 'button':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {
-          innerText: 'Click me',
-          href: '#',
-        },
-        id: v4(),
-        name: 'Button',
-        styles: {
-          backgroundColor: '#0091ff',
-          color: 'white',
-          borderRadius: '4px',
-          padding: '8px 16px',
-          fontWeight: 'bold',
-          border: 'none',
-          cursor: 'pointer',
-          ...defaultStyles,
-        },
-        type: 'button',
-      },
-    },
-  })
-  break;
-  case 'image':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {
-          src: 'https://placehold.co/600x400?text=Add+Image',
-          alt: 'Product image',
-        },
-        id: v4(),
-        name: 'Image',
-        styles: {
-          objectFit: 'cover',
-          borderRadius: '8px',
-          width: '100%',
-          height: 'auto',
-          ...defaultStyles,
-        },
-        type: 'image',
-      },
-    },
-  })
-  break;
-  case 'divider':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {},
-        id: v4(),
-        name: 'Divider',
-        styles: {
-          backgroundColor: '#e5e7eb',
-          height: '1px',
-          width: '100%',
-          margin: '1rem 0',
-        },
-        type: 'divider',
-      },
-    },
-  })
-  break;
-  case 'spacer':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {},
-        id: v4(),
-        name: 'Spacer',
-        styles: {
-          height: '2rem',
-          width: '100%',
-        },
-        type: 'spacer',
-      },
-    },
-  })
-  break;
-  case 'badge':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {
-          innerText: 'New',
-        },
-        id: v4(),
-        name: 'Badge',
-        styles: {
-          backgroundColor: '#0091ff',
-          color: 'white',
-          borderRadius: '9999px',
-          padding: '0.25rem 0.5rem',
-          fontSize: '0.75rem',
-          fontWeight: 'bold',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-        type: 'badge',
-      },
-    },
-  })
-  break;
-  case 'icon':
-  dispatch({
-    type: 'ADD_ELEMENT',
-    payload: {
-      containerId: id,
-      elementDetails: {
-        content: {
-          iconType: 'user',
-        },
-        id: v4(),
-        name: 'Icon',
-        styles: {
-          fontSize: '24px',
-          color: '#0091ff',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-        type: 'icon',
-      },
-    },
-  })
-  break;
-      default:
-        break
-    }
+    // Use the external drop handler
+    dropHandler(componentType as EditorBtns, id)
   }
 
   const handleDragOver = (e: React.DragEvent) => {

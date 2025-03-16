@@ -13,6 +13,8 @@ import DividerPlaceholder from "./BUILDER/DividerPlaceholder"
 import SpacerPlaceholder from "./BUILDER/SpacerPlaceholder"
 import BadgePlaceholder from "./BadgePlaceholder"
 import IconPlaceholder from "./BUILDER/IconPlaceholder"
+import ProductCardPlaceholder from "./Compound/ProductCardPlaceholder"
+
 
 
 const TextPlaceholder = () => {
@@ -79,7 +81,7 @@ const ComponentsTab = () => {
     Component: React.ReactNode
     label: string
     id: EditorBtns
-    group: 'layout' | 'elements'
+    group: 'layout' | 'elements'| 'compound'
   }[] = [
     {
       Component: <TextPlaceholder />,
@@ -141,6 +143,17 @@ const ComponentsTab = () => {
   label: 'Divider',
   id: 'divider',
   group: 'elements',
+
+},
+// Add to imports
+
+
+// Add to elements array
+{
+  Component: <ProductCardPlaceholder />,
+  label: 'Product Card',
+  id: 'productCard',
+  group: 'compound', // New group for compound components
 },
 
 
@@ -166,7 +179,7 @@ const ComponentsTab = () => {
     <Accordion
       type="multiple"
       className="w-full"
-      defaultValue={['Layout', 'Elements']}
+      defaultValue={['Layout', 'Elements' , 'Compound']}
     >
       <AccordionItem value="Layout" className="px-6 py-0 border-y-[1px]">
         <AccordionTrigger className="!no-underline">Layout</AccordionTrigger>
@@ -190,6 +203,22 @@ const ComponentsTab = () => {
         <AccordionContent className="flex flex-wrap gap-2">
           {elements
             .filter((element) => element.group === 'elements')
+            .map((element) => (
+              <div
+                key={element.id}
+                className="flex-col items-center justify-center flex"
+              >
+                {element.Component}
+                <span className="text-muted-foreground">{element.label}</span>
+              </div>
+            ))}
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="Compound" className="px-6 py-0 border-y-[1px]">
+        <AccordionTrigger className="!no-underline">Compound</AccordionTrigger>
+        <AccordionContent className="flex flex-wrap gap-2">
+          {elements
+            .filter((element) => element.group === 'compound')
             .map((element) => (
               <div
                 key={element.id}

@@ -285,7 +285,7 @@ export function EditorNavigation({
               Publish
             </div>
             <span className="text-muted-foreground text-sm">
-              Last updated {new Date().toLocaleDateString()}
+              {/* Last updated {new Date().toLocaleDateString()} */}
             </span>
           </div>
           

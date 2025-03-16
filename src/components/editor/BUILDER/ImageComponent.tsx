@@ -6,8 +6,8 @@ import { EditorBtns } from '@/lib/constants'
 import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
 import clsx from 'clsx'
 import { ImageIcon, Trash } from 'lucide-react'
-import Image from 'next/image'
-import React from 'react'
+
+import React, { useState } from 'react'
 
 type Props = {
   element: EditorElement
@@ -15,7 +15,8 @@ type Props = {
 
 const ImageComponent = ({ element }: Props) => {
   const { dispatch, state } = useEditor()
-  const {  content, styles, } = element
+  const { content, styles } = element
+  const [imageError, setImageError] = useState(false)
   
   // Extract image source or use placeholder
   const imageSrc = typeof content === 'object' && 'src' in content 
@@ -91,26 +92,13 @@ const ImageComponent = ({ element }: Props) => {
       
       {/* Image component */}
       <div className="w-full h-full relative">
-        {imageSrc && imageSrc !== 'https://placehold.co/600x400?text=Add+Image' ? (
-          // Real image with error handling
-          <Image
-            src={imageSrc}
-            
-
+        {imageSrc && !imageError ? (
+          // Use a regular img element instead of Next.js Image to avoid SVG warnings
+          <img
+            src={imageSrc as string}
             alt={imageAlt as string}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              // If image fails to load, show placeholder
-              const target = e.target as HTMLImageElement;
-              target.onerror = null; // Prevent infinite error loop
-              target.style.display = 'none';
-              const parent = target.parentElement;
-              if (parent) {
-                const placeholder = document.createElement('div');
-                placeholder.innerHTML = '<div class="flex flex-col items-center justify-center h-full w-full bg-muted/30 min-h-[200px]"><svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg><p class="text-muted-foreground text-sm mt-2">Image not found</p></div>';
-                parent.appendChild(placeholder.firstChild as Node);
-              }
-            }}
+            onError={() => setImageError(true)}
           />
         ) : (
           // Placeholder for empty image

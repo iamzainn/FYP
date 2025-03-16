@@ -6,7 +6,9 @@ const nextConfig = {
             'utfs.io',
             'img.clerk.com',
             'subdomain',
-            'files.clerk.com'
+            'files.clerk.com',
+            'placehold.co',
+            'placehold.co/300x300?text=Product+Image'
         ]
      },
     reactStrictMode:false

@@ -29,7 +29,7 @@ export function EditorSidebar({ storeId }: Props) {
   
   return (
     <Sheet open={true} modal={false}>
-      <Tabs className="w-full" defaultValue="Settings">
+      <Tabs  className="w-full" defaultValue="Settings">
         
         
         <SheetContent
@@ -50,7 +50,10 @@ export function EditorSidebar({ storeId }: Props) {
             { hidden: state.editor.previewMode }
           )}
         >
-          <div className="grid gap-4 h-full pb-36 overflow-scroll">
+          <div 
+            className="grid gap-4 h-full pb-36 overflow-scroll settings-panel" 
+            onClick={(e) => e.stopPropagation()}
+          >
             <TabsContent value="Settings">
               <SheetHeader className="text-left p-6">
                 <SheetTitle>Styles</SheetTitle>
@@ -58,7 +61,7 @@ export function EditorSidebar({ storeId }: Props) {
                   Show your creativity! You can customize every component as you like.
                 </SheetDescription>
               </SheetHeader>
-              <SettingsTab />
+              <SettingsTab key={state.editor.selectedElement?.id || 'empty'} />
             </TabsContent>
             <TabsContent value="Components">
   <SheetHeader className="text-left p-6">

@@ -1,0 +1,182 @@
+Compound Component Building Guide for Website Builder
+Today's Problem and Solution
+Problem:
+The TwoColComponent had a conflict between Settings.tsx manual controls and its internal responsive behavior.
+When device size changed, the component would automatically change its flex-direction to row/column.
+If a user manually set flex-direction through Settings.tsx, this would get overridden when the device changed.
+This created confusion as manual style changes weren't persisting across device changes.
+Solution:
+We modified the TwoColComponent to detect manually set values by looking for non-standard flex directions.
+When row-reverse or column-reverse are detected, we assume these were manually set by the user.
+The automatic responsive behavior only runs if standard values (row/column) are present.
+This preserves user customization while maintaining automatic responsive behavior by default.
+We also simplified the dependency array to only trigger on device changes, not on every render.
+How to Build Compound Components in this Project
+Step 1: Plan Your Component Structure
+Decide what atomic elements your compound component will contain
+Determine the default styles and layout (flex, grid, etc.)
+Plan for responsive behavior across different devices
+Step 2: Create the Component File
+Create a new file in src/components/editor/BUILDER/YourComponentName.tsx
+Start with the standard imports and interface:
+'use client'
+
+import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
+import React, { CSSProperties, useEffect } from 'react'
+import clsx from 'clsx'
+import Recursive from './recursive'
+import { Badge } from '@/components/ui/badge'
+import { Trash } from 'lucide-react'
+import { useDropHandler } from '@/lib/fn'
+import { EditorBtns } from '@/lib/constants'
+
+interface YourComponentProps {
+  element: EditorElement
+}
+
+Step 3: Implement Basic Component Structure
+Set up the main component function that accepts the element prop
+Extract important properties from the element
+
+const YourComponent = ({ element }: YourComponentProps) => {
+  const { id, content, styles, type } = element
+  const { dispatch, state } = useEditor()
+  const dropHandler = useDropHandler()
+  
+  // Component logic here
+  
+  // Return JSX
+}
+
+Step 4: Implement Event Handlers
+Add standard handlers for clicks, drags, and drops:
+const handleOnClickBody = (e: React.MouseEvent) => {
+  e.stopPropagation()
+  dispatch({
+    type: "CHANGE_CLICKED_ELEMENT",
+    payload: {
+      elementDetails: element
+    }
+  })
+}
+
+const handleOnDrop = (e: React.DragEvent, id: string) => {
+  e.stopPropagation()
+  const componentType = e.dataTransfer.getData('componentType')
+  dropHandler(componentType as EditorBtns, id)
+}
+
+const handleDragOver = (e: React.DragEvent) => {
+  e.preventDefault()
+}
+
+const handleDragStart = (e: React.DragEvent, type: string) => {
+  if (type === '__body') return
+  e.dataTransfer.setData('componentType', type)
+}
+
+const handleDeleteElement = () => {
+  dispatch({
+    type: 'DELETE_ELEMENT',
+    payload: { elementDetails: element },
+  })
+}
+
+Step 5: Implement Responsive Behavior
+useEffect(() => {
+  if (element.type === 'YourComponentType') {
+    // Check if user has set custom styles to preserve
+    const isCustomStyleSet = styles?.flexDirection === 'row-reverse' || 
+                           styles?.flexDirection === 'column-reverse';
+    
+    // Only auto-update if no custom style
+    if (!isCustomStyleSet) {
+      const updatedStyles = {
+        ...styles,
+        flexDirection: state.editor.device === 'Mobile' ? 'column' : 'row',
+      }
+
+      // Only dispatch if the style actually changed
+      if (styles.flexDirection !== updatedStyles.flexDirection) {
+        dispatch({
+          type: 'UPDATE_ELEMENT',
+          payload: {
+            elementDetails: {
+              ...element,
+              styles: updatedStyles as CSSProperties,
+            },
+          },
+        })
+        
+        // Update child elements if needed
+        if (Array.isArray(content)) {
+          // Update children styles here
+        }
+      }
+    }
+  }
+}, [state.editor.device]) // Only depend on device changes
+
+Step 6: Create Component JSX
+Build the component's markup with proper classes and styles
+return (
+  <div
+    style={styles}
+    className={clsx('relative p-4 transition-all', {
+      'h-fit': type === 'container',
+      'border-blue-500': 
+        state.editor.selectedElement.id === id && 
+        !state.editor.liveMode,
+      'border-solid': 
+        state.editor.selectedElement.id === id && 
+        !state.editor.liveMode,
+      'border-dashed border-[1px] border-slate-300': !state.editor.liveMode,
+    })}
+    onDrop={(e) => handleOnDrop(e, id)}
+    onDragOver={handleDragOver}
+    draggable={type !== '__body'}
+    onClick={handleOnClickBody}
+    onDragStart={(e) => handleDragStart(e, 'YourComponentType')}
+  >
+    {/* Selection badge shown when selected */}
+    {state.editor.selectedElement.id === element.id &&
+      !state.editor.liveMode && (
+        <Badge className="absolute -top-[23px] -left-[1px] rounded-none rounded-t-lg">
+          {state.editor.selectedElement.name}
+        </Badge>
+      )}
+
+    {/* Render child components recursively */}
+    {Array.isArray(content) &&
+      content.map((childElement) => (
+        <Recursive key={childElement.id} element={childElement} />
+      ))}
+
+    {/* Delete button shown when selected */}
+    {state.editor.selectedElement.id === element.id &&
+      !state.editor.liveMode && (
+        <div className="absolute bg-primary px-2.5 py-1 text-xs font-bold -top-[25px] -right-[1px] rounded-none rounded-t-lg text-white">
+          <Trash
+            className="cursor-pointer"
+            size={16}
+            onClick={handleDeleteElement}
+          />
+        </div>
+      )}
+  </div>
+)
+
+Step 7: Register the Component
+Add the component to the BUILDER_COMPONENTS map in the editor provider
+Create a default structure for the component in constants.ts
+Step 8: Add Component Button
+Create a button/component for the sidebar that allows users to drag and drop the component
+Important Things to Remember:
+Balance Between Automation and User Control: Always provide a way for user settings to override automatic behavior
+Handle Responsiveness: Make components responsive by default, but respect user customizations
+Child Elements: Manage child elements properly, ensuring their styles update in relation to parent changes
+Performance: Use focused useEffects with specific dependency arrays to prevent unnecessary re-renders
+Type Safety: Use proper TypeScript typing to catch errors early
+Consistent Styles: Follow the project's style patterns (borders, selection indicators, etc.)
+User Feedback: Show proper selection indicators and component labels
+By following these steps and principles, you can create consistent compound components that fit perfectly within the project's architecture while maintaining both automatic responsive behavior and respecting manual user customizations.

@@ -35,6 +35,8 @@ import {
 } from "lucide-react"
 import { useState } from "react"
 
+
+
 // Add this TypeScript interface for units
 interface StyleUnit {
   value: 'px' | 'rem' | 'em' | '%';
@@ -49,17 +51,88 @@ const availableUnits: StyleUnit[] = [
   { value: '%', label: 'Percent' }
 ];
 
+// Add this section right after the existing StyleUnit interface
+interface CustomSettingsMap {
+  link: {
+    title: string;
+    settings: {
+      id: string;
+      label: string;
+      type: 'text' | 'color' | 'number' | 'select';
+      placeholder?: string;
+      options?: { value: string; label: string }[];
+    }[];
+  };
+  // Add other element types here in future
+}
+
+// Define custom settings for each element type
+const customSettings: CustomSettingsMap = {
+  link: {
+    title: 'Link Settings',
+    settings: [
+      {
+        id: 'href',
+        label: 'URL',
+        type: 'text',
+        placeholder: 'https://example.com'
+      },
+      {
+        id: 'target',
+        label: 'Open in',
+        type: 'select',
+        options: [
+          { value: '_self', label: 'Same window' },
+          { value: '_blank', label: 'New window' }
+        ]
+      },
+      {
+        id: 'rel',
+        label: 'Link Relation',
+        type: 'select',
+        options: [
+          { value: '', label: 'None' },
+          { value: 'nofollow', label: 'No Follow' },
+          { value: 'noopener', label: 'No Opener' },
+          { value: 'noreferrer', label: 'No Referrer' }
+        ]
+      }
+    ]
+  }
+};
+
 const SettingsTab = () => {
   // Get editor state and dispatch from context
   const { state, dispatch } = useEditor()
-  console.log("element ", state.editor.selectedElement)
   
+  // Debug function for Settings component
+  // const debugSettings = (message: string) => {
+  //   console.log(`[SETTINGS] ${message}`);
+  //   console.log(`[SETTINGS] Selected Element:`, state.editor.selectedElement);
+  //   console.log(`[SETTINGS] History Index:`, state.history.currentIndex);
+    
+  //   // Check sync with editor state
+  //   const historyElement = state.history.history[state.history.currentIndex]?.selectedElement;
+  //   if (historyElement?.id !== state.editor.selectedElement?.id) {
+  //     console.warn("[SETTINGS] WARNING: History and editor selectedElement not in sync!");
+  //   }
+  // }
+
   // Add state for current units
   const [marginUnit, setMarginUnit] = useState<StyleUnit['value']>('px');
   const [paddingUnit, setPaddingUnit] = useState<StyleUnit['value']>('px');
   
   // Only show settings when an element is selected
   const selectedElement = state.editor.selectedElement
+
+  // Debug when selected element changes
+  // useEffect(() => {
+  //   debugSettings("Selected element changed");
+  //   // Also call the provider debug function for comprehensive info
+  //   if (typeof providerDebugState === 'function') {
+  //     providerDebugState('SETTINGS_ELEMENT_CHANGED', state);
+  //   }
+  // }, [selectedElement, state]);
 
   // Helper to get current opacity value as a number
   const getOpacityValue = (): number => {
@@ -83,7 +156,7 @@ const SettingsTab = () => {
     }
   };
 
-  // Handle changes to custom element properties
+  // Update handleChangeCustomValues to handle content properties
   const handleChangeCustomValues = (e: any) => {
     try {
       const settingProperty = e.target.id
@@ -91,12 +164,26 @@ const SettingsTab = () => {
       
       console.log(`Setting custom property ${settingProperty} to:`, value)
       
-      // Create style object with the updated property
-      const styleObject = {
-        [settingProperty]: value,
-      }
+      // Check if this is a custom content property or a style property
+      const isCustomProperty = selectedElement.type === 'link' && 
+        ['href', 'target', 'rel'].includes(settingProperty)
       
-      // Dispatch update action to modify the element
+      if (isCustomProperty) {
+        // Update content object
+  dispatch({
+    type: 'UPDATE_ELEMENT',
+    payload: {
+      elementDetails: {
+        ...state.editor.selectedElement,
+              content: {
+                ...state.editor.selectedElement.content,
+                [settingProperty]: value,
+              },
+            }
+          }
+        })
+      } else {
+        // Update styles object
       dispatch({
         type: 'UPDATE_ELEMENT',
         payload: {
@@ -104,16 +191,16 @@ const SettingsTab = () => {
             ...state.editor.selectedElement,
             styles: {
               ...state.editor.selectedElement.styles,
-              ...styleObject,
-            },
+                [settingProperty]: value,
+              },
+            }
           }
-        }
-      })
+        })
+      }
 
-      console.log('Updated custom property successfully')
+      console.log('Updated property successfully')
     } catch (error) {
-      console.error('Error updating custom property:', error)
-      // toast.error('Failed to update element property')
+      console.error('Error updating property:', error)
     }
   }
 
@@ -157,11 +244,23 @@ const SettingsTab = () => {
     handleStyleChange(property, newValue);
   };
 
-  // If no element is selected, show message
-  if (!selectedElement) {
+  // Improve the condition for showing empty state
+  if (!selectedElement || 
+      selectedElement.type === null || 
+      selectedElement.id === "" || 
+      typeof selectedElement.id === 'undefined') {
+    // console.log("Empty state condition triggered!");
     return (
-      <div className="p-4 text-center text-muted-foreground">
+      <div className="p-4 flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+        <div className="mb-4">
+          <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium">No Element Selected</h3>
+        <p className="mt-1 text-sm">
         Select an element to edit its properties
+        </p>
       </div>
     )
   }
@@ -173,26 +272,47 @@ const SettingsTab = () => {
       <Accordion
         type="multiple"
         className="w-full"
-        defaultValue={['Typography', 'Dimensions', 'Decorations', 'Flexbox']}
+        defaultValue={['CustomSettings', 'Typography', 'Dimensions', 'Decorations', 'Flexbox']}
       >
-        {/* Link section - only shown for link elements */}
-        {selectedElement.type === 'link' && 
-         !Array.isArray(state.editor.selectedElement.content) && (
-          <AccordionItem value="Link">
+        {/* Custom Settings Section - Only show for supported elements */}
+        {selectedElement?.type && selectedElement.type in customSettings && (
+          <AccordionItem value="CustomSettings">
             <AccordionTrigger className="no-underline">
-              Link Path
+              {customSettings[selectedElement.type as keyof CustomSettingsMap].title}
             </AccordionTrigger>
-            <AccordionContent className="flex flex-col gap-2">
-              <div className="flex flex-col gap-2">
-                <p className="text-muted-foreground">Link Path</p>
+            <AccordionContent className="flex flex-col gap-4">
+              {customSettings[selectedElement.type as keyof CustomSettingsMap].settings.map((setting) => (
+                <div key={setting.id} className="flex flex-col gap-2">
+                  <p className="text-muted-foreground">{setting.label}</p>
+                  {setting.type === 'text' && (
                 <input
-                  id="href"
-                  placeholder="https://domain.example.com/pathname"
+                      id={setting.id}
+                      placeholder={setting.placeholder}
                   onChange={handleChangeCustomValues}
-                  value={state.editor.selectedElement.content?.href as string || ''}
+                      value={
+                        (selectedElement.content as Record<string, string>)?.[setting.id] || ''
+                      }
                   className="border p-2 rounded-md"
                 />
+                  )}
+                  {setting.type === 'select' && setting.options && (
+                    <select
+                      id={setting.id}
+                      onChange={handleChangeCustomValues}
+                      value={
+                        (selectedElement.content as Record<string, string>)?.[setting.id] || ''
+                      }
+                      className="border p-2 rounded-md"
+                    >
+                      {setting.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
               </div>
+              ))}
             </AccordionContent>
           </AccordionItem>
         )}
@@ -226,77 +346,77 @@ const SettingsTab = () => {
             
             {/* Size input */}
             {/* Size input with unit selection */}
-            <div className="flex flex-col gap-2">
-              <p className="text-muted-foreground">Font Size</p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-                  <input
-                    id="fontSize"
+<div className="flex flex-col gap-2">
+  <p className="text-muted-foreground">Font Size</p>
+  <div className="flex items-center gap-2">
+    <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+      <input
+        id="fontSize"
                     onChange={handleChangeCustomValues}
                     value={state.editor.selectedElement.styles?.fontSize as string || ''}
-                    className="flex-1 p-2 border-0 focus:ring-0"
-                    placeholder="16px"
-                  />
-                  <div className="flex items-center border-l h-full">
-                    <button
-                      type="button"
-                      className="px-2 py-2 hover:bg-gray-100"
-                      onClick={() => {
+        className="flex-1 p-2 border-0 focus:ring-0"
+        placeholder="16px"
+      />
+      <div className="flex items-center border-l h-full">
+        <button
+          type="button"
+          className="px-2 py-2 hover:bg-gray-100"
+          onClick={() => {
                         const currentValue = state.editor.selectedElement.styles?.fontSize as string || '16px';
                         const numValue = parseFloat(currentValue) || 16;
                         const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
-                        const step = unit === 'px' ? 1 : 0.1;
+            const step = unit === 'px' ? 1 : 0.1;
                         handleChangeCustomValues({
-                          target: {
-                            id: 'fontSize',
-                            value: `${Math.max(0, numValue - step)}${unit}`,
-                          },
-                        });
-                      }}
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      className="px-2 py-2 hover:bg-gray-100"
-                      onClick={() => {
+              target: {
+                id: 'fontSize',
+                value: `${Math.max(0, numValue - step)}${unit}`,
+              },
+            });
+          }}
+        >
+          <Minus size={14} />
+        </button>
+        <button
+          type="button"
+          className="px-2 py-2 hover:bg-gray-100"
+          onClick={() => {
                         const currentValue = state.editor.selectedElement.styles?.fontSize as string || '16px';
                         const numValue = parseFloat(currentValue) || 16;
                         const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
-                        const step = unit === 'px' ? 1 : 0.1;
+            const step = unit === 'px' ? 1 : 0.1;
                         handleChangeCustomValues({
-                          target: {
-                            id: 'fontSize',
-                            value: `${numValue + step}${unit}`,
-                          },
-                        });
-                      }}
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </div>
-                <select
-                  className="border p-2 rounded-md w-20"
+              target: {
+                id: 'fontSize',
+                value: `${numValue + step}${unit}`,
+              },
+            });
+          }}
+        >
+          <Plus size={14} />
+        </button>
+      </div>
+    </div>
+    <select
+      className="border p-2 rounded-md w-20"
                   value={(state.editor.selectedElement.styles?.fontSize as string || '16px').replace(/[\d.-]/g, '') || 'px'}
-                  onChange={(e) => {
+      onChange={(e) => {
                     const currentValue = state.editor.selectedElement.styles?.fontSize as string || '16px';
                     const numValue = parseFloat(currentValue) || 16;
                     handleChangeCustomValues({
-                      target: {
-                        id: 'fontSize',
-                        value: `${numValue}${e.target.value}`,
-                      },
-                    });
-                  }}
-                >
-                  <option value="px">px</option>
-                  <option value="%">%</option>
-                  <option value="em">em</option>
-                  <option value="rem">rem</option>
-                </select>
-              </div>
-            </div>
+          target: {
+            id: 'fontSize',
+            value: `${numValue}${e.target.value}`,
+          },
+        });
+      }}
+    >
+      <option value="px">px</option>
+      <option value="%">%</option>
+      <option value="em">em</option>
+      <option value="rem">rem</option>
+    </select>
+  </div>
+</div>
             
             {/* Font Weight */}
             <div className="flex flex-col gap-2">
@@ -592,286 +712,286 @@ const SettingsTab = () => {
               </div>
             </div>
             {/* Simplified Margin Controls */}
-            <div className="flex flex-col gap-2 mt-4">
-              <div className="flex justify-between items-center">
-                <p className="text-muted-foreground">Margin</p>
-                <select
-                  className="border p-2 rounded-md w-20 text-xs"
+<div className="flex flex-col gap-2 mt-4">
+  <div className="flex justify-between items-center">
+    <p className="text-muted-foreground">Margin</p>
+    <select
+      className="border p-2 rounded-md w-20 text-xs"
                   value={marginUnit}
                   onChange={(e) => setMarginUnit(e.target.value as StyleUnit['value'])}
                 >
                   {availableUnits.map(unit => (
                     <option key={unit.value} value={unit.value}>{unit.value}</option>
                   ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {/* Top Margin */}
-                <div className="flex items-center gap-1">
-                  <p className="text-xs text-muted-foreground w-8">Top</p>
-                  <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-                    <input
-                      id="marginTop"
-                      onChange={(e) => handleStyleChange('marginTop', e.target.value)}
+    </select>
+  </div>
+  <div className="grid grid-cols-2 gap-2">
+    {/* Top Margin */}
+    <div className="flex items-center gap-1">
+      <p className="text-xs text-muted-foreground w-8">Top</p>
+      <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+        <input
+          id="marginTop"
+          onChange={(e) => handleStyleChange('marginTop', e.target.value)}
                       value={String(state.editor.selectedElement.styles?.marginTop || '')
                         .replace(/[a-z%]/g, '')}
-                      className="flex-1 p-2 border-0 focus:ring-0 text-sm"
-                      placeholder="0"
-                    />
-                    <div className="flex items-center border-l h-full">
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100 border-r"
-                        onClick={() => handleIncrement('marginTop', false)}
-                      >
-                        <Minus size={14} className="text-gray-700" />
-                      </button>
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100"
-                        onClick={() => handleIncrement('marginTop', true)}
-                      >
-                        <Plus size={14} className="text-gray-700" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+          className="flex-1 p-2 border-0 focus:ring-0 text-sm"
+          placeholder="0"
+        />
+        <div className="flex items-center border-l h-full">
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100 border-r"
+            onClick={() => handleIncrement('marginTop', false)}
+          >
+            <Minus size={14} className="text-gray-700" />
+          </button>
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100"
+            onClick={() => handleIncrement('marginTop', true)}
+          >
+            <Plus size={14} className="text-gray-700" />
+          </button>
+        </div>
+      </div>
+    </div>
                 
-                {/* Right Margin */}
-                <div className="flex items-center gap-1">
-                  <p className="text-xs text-muted-foreground w-8">Right</p>
-                  <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-                    <input
-                      id="marginRight"
-                      onChange={(e) => handleStyleChange('marginRight', e.target.value)}
+    {/* Right Margin */}
+    <div className="flex items-center gap-1">
+      <p className="text-xs text-muted-foreground w-8">Right</p>
+      <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+        <input
+          id="marginRight"
+          onChange={(e) => handleStyleChange('marginRight', e.target.value)}
                       value={String(state.editor.selectedElement.styles?.marginRight || '')
                         .replace(/[a-z%]/g, '')}
-                      className="flex-1 p-2 border-0 focus:ring-0 text-sm"
-                      placeholder="0"
-                    />
-                    <div className="flex items-center border-l h-full">
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100 border-r"
-                        onClick={() => handleIncrement('marginRight', false)}
-                      >
-                        <Minus size={14} className="text-gray-700" />
-                      </button>
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100"
-                        onClick={() => handleIncrement('marginRight', true)}
-                      >
-                        <Plus size={14} className="text-gray-700" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+          className="flex-1 p-2 border-0 focus:ring-0 text-sm"
+          placeholder="0"
+        />
+        <div className="flex items-center border-l h-full">
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100 border-r"
+            onClick={() => handleIncrement('marginRight', false)}
+          >
+            <Minus size={14} className="text-gray-700" />
+          </button>
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100"
+            onClick={() => handleIncrement('marginRight', true)}
+          >
+            <Plus size={14} className="text-gray-700" />
+          </button>
+        </div>
+      </div>
+    </div>
                 
-                {/* Bottom Margin */}
-                <div className="flex items-center gap-1">
-                  <p className="text-xs text-muted-foreground w-8">Bottom</p>
-                  <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-                    <input
-                      id="marginBottom"
-                      onChange={(e) => handleStyleChange('marginBottom', e.target.value)}
+    {/* Bottom Margin */}
+    <div className="flex items-center gap-1">
+      <p className="text-xs text-muted-foreground w-8">Bottom</p>
+      <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+        <input
+          id="marginBottom"
+          onChange={(e) => handleStyleChange('marginBottom', e.target.value)}
                       value={String(state.editor.selectedElement.styles?.marginBottom || '')
                         .replace(/[a-z%]/g, '')}
-                      className="flex-1 p-2 border-0 focus:ring-0 text-sm"
-                      placeholder="0"
-                    />
-                    <div className="flex items-center border-l h-full">
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100 border-r"
-                        onClick={() => handleIncrement('marginBottom', false)}
-                      >
-                        <Minus size={14} className="text-gray-700" />
-                      </button>
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100"
-                        onClick={() => handleIncrement('marginBottom', true)}
-                      >
-                        <Plus size={14} className="text-gray-700" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+          className="flex-1 p-2 border-0 focus:ring-0 text-sm"
+          placeholder="0"
+        />
+        <div className="flex items-center border-l h-full">
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100 border-r"
+            onClick={() => handleIncrement('marginBottom', false)}
+          >
+            <Minus size={14} className="text-gray-700" />
+          </button>
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100"
+            onClick={() => handleIncrement('marginBottom', true)}
+          >
+            <Plus size={14} className="text-gray-700" />
+          </button>
+        </div>
+      </div>
+    </div>
                 
-                {/* Left Margin */}
-                <div className="flex items-center gap-1">
-                  <p className="text-xs text-muted-foreground w-8">Left</p>
-                  <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-                    <input
-                      id="marginLeft"
-                      onChange={(e) => handleStyleChange('marginLeft', e.target.value)}
+    {/* Left Margin */}
+    <div className="flex items-center gap-1">
+      <p className="text-xs text-muted-foreground w-8">Left</p>
+      <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+        <input
+          id="marginLeft"
+          onChange={(e) => handleStyleChange('marginLeft', e.target.value)}
                       value={String(state.editor.selectedElement.styles?.marginLeft || '')
                         .replace(/[a-z%]/g, '')}
-                      className="flex-1 p-2 border-0 focus:ring-0 text-sm"
-                      placeholder="0"
-                    />
-                    <div className="flex items-center border-l h-full">
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100 border-r"
-                        onClick={() => handleIncrement('marginLeft', false)}
-                      >
-                        <Minus size={14} className="text-gray-700" />
-                      </button>
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100"
-                        onClick={() => handleIncrement('marginLeft', true)}
-                      >
-                        <Plus size={14} className="text-gray-700" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          className="flex-1 p-2 border-0 focus:ring-0 text-sm"
+          placeholder="0"
+        />
+        <div className="flex items-center border-l h-full">
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100 border-r"
+            onClick={() => handleIncrement('marginLeft', false)}
+          >
+            <Minus size={14} className="text-gray-700" />
+          </button>
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100"
+            onClick={() => handleIncrement('marginLeft', true)}
+          >
+            <Plus size={14} className="text-gray-700" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
             {/* Simplified Padding Controls */}
-            <div className="flex flex-col gap-2 mt-4">
-              <div className="flex justify-between items-center">
-                <p className="text-muted-foreground">Padding</p>
-                <select
-                  className="border p-2 rounded-md w-20 text-xs"
+<div className="flex flex-col gap-2 mt-4">
+  <div className="flex justify-between items-center">
+    <p className="text-muted-foreground">Padding</p>
+    <select
+      className="border p-2 rounded-md w-20 text-xs"
                   value={paddingUnit}
                   onChange={(e) => setPaddingUnit(e.target.value as StyleUnit['value'])}
                 >
                   {availableUnits.map(unit => (
                     <option key={unit.value} value={unit.value}>{unit.value}</option>
                   ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {/* Top Padding */}
-                <div className="flex items-center gap-1">
-                  <p className="text-xs text-muted-foreground w-8">Top</p>
-                  <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-                    <input
-                      id="paddingTop"
-                      onChange={(e) => handleStyleChange('paddingTop', e.target.value)}
+    </select>
+  </div>
+  <div className="grid grid-cols-2 gap-2">
+    {/* Top Padding */}
+    <div className="flex items-center gap-1">
+      <p className="text-xs text-muted-foreground w-8">Top</p>
+      <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+        <input
+          id="paddingTop"
+          onChange={(e) => handleStyleChange('paddingTop', e.target.value)}
                       value={String(state.editor.selectedElement.styles?.paddingTop || '')
                         .replace(/[a-z%]/g, '')}
-                      className="flex-1 p-2 border-0 focus:ring-0 text-sm"
-                      placeholder="0"
-                    />
-                    <div className="flex items-center border-l h-full">
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100 border-r"
-                        onClick={() => handleIncrement('paddingTop', false)}
-                      >
-                        <Minus size={14} className="text-gray-700" />
-                      </button>
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100"
-                        onClick={() => handleIncrement('paddingTop', true)}
-                      >
-                        <Plus size={14} className="text-gray-700" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+          className="flex-1 p-2 border-0 focus:ring-0 text-sm"
+          placeholder="0"
+        />
+        <div className="flex items-center border-l h-full">
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100 border-r"
+            onClick={() => handleIncrement('paddingTop', false)}
+          >
+            <Minus size={14} className="text-gray-700" />
+          </button>
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100"
+            onClick={() => handleIncrement('paddingTop', true)}
+          >
+            <Plus size={14} className="text-gray-700" />
+          </button>
+        </div>
+      </div>
+    </div>
                 
-                {/* Right Padding */}
-                <div className="flex items-center gap-1">
-                  <p className="text-xs text-muted-foreground w-8">Right</p>
-                  <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-                    <input
-                      id="paddingRight"
-                      onChange={(e) => handleStyleChange('paddingRight', e.target.value)}
+    {/* Right Padding */}
+    <div className="flex items-center gap-1">
+      <p className="text-xs text-muted-foreground w-8">Right</p>
+      <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+        <input
+          id="paddingRight"
+          onChange={(e) => handleStyleChange('paddingRight', e.target.value)}
                       value={String(state.editor.selectedElement.styles?.paddingRight || '')
                         .replace(/[a-z%]/g, '')}
-                      className="flex-1 p-2 border-0 focus:ring-0 text-sm"
-                      placeholder="0"
-                    />
-                    <div className="flex items-center border-l h-full">
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100 border-r"
-                        onClick={() => handleIncrement('paddingRight', false)}
-                      >
-                        <Minus size={14} className="text-gray-700" />
-                      </button>
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100"
-                        onClick={() => handleIncrement('paddingRight', true)}
-                      >
-                        <Plus size={14} className="text-gray-700" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+          className="flex-1 p-2 border-0 focus:ring-0 text-sm"
+          placeholder="0"
+        />
+        <div className="flex items-center border-l h-full">
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100 border-r"
+            onClick={() => handleIncrement('paddingRight', false)}
+          >
+            <Minus size={14} className="text-gray-700" />
+          </button>
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100"
+            onClick={() => handleIncrement('paddingRight', true)}
+          >
+            <Plus size={14} className="text-gray-700" />
+          </button>
+        </div>
+      </div>
+    </div>
                 
-                {/* Bottom Padding */}
-                <div className="flex items-center gap-1">
-                  <p className="text-xs text-muted-foreground w-8">Bottom</p>
-                  <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-                    <input
-                      id="paddingBottom"
-                      onChange={(e) => handleStyleChange('paddingBottom', e.target.value)}
+    {/* Bottom Padding */}
+    <div className="flex items-center gap-1">
+      <p className="text-xs text-muted-foreground w-8">Bottom</p>
+      <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+        <input
+          id="paddingBottom"
+          onChange={(e) => handleStyleChange('paddingBottom', e.target.value)}
                       value={String(state.editor.selectedElement.styles?.paddingBottom || '')
                         .replace(/[a-z%]/g, '')}
-                      className="flex-1 p-2 border-0 focus:ring-0 text-sm"
-                      placeholder="0"
-                    />
-                    <div className="flex items-center border-l h-full">
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100 border-r"
-                        onClick={() => handleIncrement('paddingBottom', false)}
-                      >
-                        <Minus size={14} className="text-gray-700" />
-                      </button>
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100"
-                        onClick={() => handleIncrement('paddingBottom', true)}
-                      >
-                        <Plus size={14} className="text-gray-700" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+          className="flex-1 p-2 border-0 focus:ring-0 text-sm"
+          placeholder="0"
+        />
+        <div className="flex items-center border-l h-full">
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100 border-r"
+            onClick={() => handleIncrement('paddingBottom', false)}
+          >
+            <Minus size={14} className="text-gray-700" />
+          </button>
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100"
+            onClick={() => handleIncrement('paddingBottom', true)}
+          >
+            <Plus size={14} className="text-gray-700" />
+          </button>
+        </div>
+      </div>
+    </div>
                 
-                {/* Left Padding */}
-                <div className="flex items-center gap-1">
-                  <p className="text-xs text-muted-foreground w-8">Left</p>
-                  <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-                    <input
-                      id="paddingLeft"
-                      onChange={(e) => handleStyleChange('paddingLeft', e.target.value)}
+    {/* Left Padding */}
+    <div className="flex items-center gap-1">
+      <p className="text-xs text-muted-foreground w-8">Left</p>
+      <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+        <input
+          id="paddingLeft"
+          onChange={(e) => handleStyleChange('paddingLeft', e.target.value)}
                       value={String(state.editor.selectedElement.styles?.paddingLeft || '')
                         .replace(/[a-z%]/g, '')}
-                      className="flex-1 p-2 border-0 focus:ring-0 text-sm"
-                      placeholder="0"
-                    />
-                    <div className="flex items-center border-l h-full">
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100 border-r"
-                        onClick={() => handleIncrement('paddingLeft', false)}
-                      >
-                        <Minus size={14} className="text-gray-700" />
-                      </button>
-                      <button
-                        type="button"
-                        className="px-2 py-2 hover:bg-gray-100"
-                        onClick={() => handleIncrement('paddingLeft', true)}
-                      >
-                        <Plus size={14} className="text-gray-700" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          className="flex-1 p-2 border-0 focus:ring-0 text-sm"
+          placeholder="0"
+        />
+        <div className="flex items-center border-l h-full">
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100 border-r"
+            onClick={() => handleIncrement('paddingLeft', false)}
+          >
+            <Minus size={14} className="text-gray-700" />
+          </button>
+          <button
+            type="button"
+            className="px-2 py-2 hover:bg-gray-100"
+            onClick={() => handleIncrement('paddingLeft', true)}
+          >
+            <Plus size={14} className="text-gray-700" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
           </AccordionContent>
         </AccordionItem>
         
@@ -1212,3 +1332,5 @@ const SettingsTab = () => {
 }
 
 export default SettingsTab;
+
+

@@ -1,7 +1,7 @@
 "use client";
 
 import { EditorBtns } from '@/lib/constants'
-import { createContext, useContext, useReducer,  ReactNode } from 'react'
+import { createContext, useContext, useReducer, ReactNode, useRef, useEffect } from 'react'
 
 export type DeviceTypes = 'Desktop' | 'Mobile' | 'Tablet'
 
@@ -10,7 +10,20 @@ export type EditorElement = {
   styles: React.CSSProperties
   name: string
   type: EditorBtns
-  content: EditorElement[] | {src?:string,innerText?:string,href?:string, alt?:string, iconType?:string,width?:string,height?:string,borderRadius?:string,borderTopRadius?:string,borderRightRadius?:string,borderBottomRadius?:string,borderLeftRadius?:string}
+  content: EditorElement[] | {
+    src?: string,
+    innerText?: string,
+    href?: string,
+    alt?: string,
+    iconType?: string,
+    width?: string,
+    height?: string,
+    borderRadius?: string,
+    borderTopRadius?: string,
+    borderRightRadius?: string,
+    borderBottomRadius?: string,
+    borderLeftRadius?: string
+  }
 }
 
 export type Editor = {
@@ -81,7 +94,7 @@ export type EditorAction =
       type: 'TOGGLE_PREVIEW_MODE'
     }
   | {
-      type: 'TOGGLE_LIVE_MODE', 
+      type: 'TOGGLE_LIVE_MODE'
     }
   | {
       type: 'CHANGE_DEVICE'
@@ -162,7 +175,27 @@ export const EditorProvider = ({
   pageDetails: StorePage | null
 }) => {
   const [state, dispatch] = useReducer(editorReducer, initialState)
-
+  const lastSelectedElementIdRef = useRef<string>("");
+  
+  // Create a wrapped dispatch function to intercept CHANGE_CLICKED_ELEMENT actions
+  const wrappedDispatch = (action: EditorAction) => {
+    if (action.type === 'CHANGE_CLICKED_ELEMENT') {
+      const newElementId = action.payload.elementDetails?.id || "";
+      
+      // Only dispatch if the element ID is actually changing
+      if (newElementId !== lastSelectedElementIdRef.current) {
+        console.log(`Selection changed from ${lastSelectedElementIdRef.current} to ${newElementId}`);
+        lastSelectedElementIdRef.current = newElementId;
+        dispatch(action);
+      } else {
+        console.log(`Prevented duplicate selection of ${newElementId}`);
+      }
+    } else {
+      // For all other actions, dispatch normally
+      dispatch(action);
+    }
+  }
+  
   // useEffect(() => {
   //   if (!state.editor.storePageId && pageDetails) {
   //     // Load from localStorage if available, otherwise use initial state
@@ -204,11 +237,50 @@ export const EditorProvider = ({
   //   }
   // }, [state])
   
+  console.log("RENDER - History index:", state.history.currentIndex);
+  console.log("RENDER - History at current index:", state.history.history[state.history.currentIndex]);
+  
+  // Add this effect to clear selection when deleting an element
+  useEffect(() => {
+    // If the selected element doesn't exist in the elements array,
+    // don't re-dispatch a CHANGE_CLICKED_ELEMENT action
+  }, [state.editor.elements]);
+  
+  // Handle synchronization between selected element and elements array
+  useEffect(() => {
+    const selectedId = state.editor.selectedElement?.id;
+    
+    // Skip for empty or body selections
+    if (!selectedId || selectedId === "" || selectedId === "__body") {
+      return;
+    }
+    
+    // Check if the selected element exists in the elements array
+    const elementExists = elementExistsInArray(state.editor.elements, selectedId);
+    
+    // If the element doesn't exist anymore but is still selected, clear the selection
+    if (!elementExists) {
+      console.log(`Selected element ${selectedId} no longer exists, clearing selection`);
+      wrappedDispatch({
+        type: 'CHANGE_CLICKED_ELEMENT',
+        payload: {
+          elementDetails: {
+            id: "",
+            content: [],
+            name: "",
+            styles: {},
+            type: null,
+          }
+        }
+      });
+    }
+  }, [state.editor.elements, state.editor.selectedElement?.id]);
+  
   return (
     <EditorContext.Provider
       value={{
         state,
-        dispatch,
+        dispatch: wrappedDispatch, // Use the wrapped dispatch instead
         storeId,
         pageDetails,
       }}
@@ -227,17 +299,22 @@ export const useEditor = () => {
 }
 
 const editorReducer = (state: EditorState = initialState, action: EditorAction) => {
+  console.log(`[REDUCER] Action type: ${action.type}`);
+  if (action.type === 'CHANGE_CLICKED_ELEMENT') {
+    console.trace('[REDUCER] CHANGE_CLICKED_ELEMENT was dispatched from:');
+  }
+  
   switch (action.type) {
     case 'ADD_ELEMENT': {
       const updatedEditorState = {
         ...state.editor,
         elements: addAnElement(state.editor.elements, action),
+        selectedElement: action.payload.elementDetails
       }
       
-      // Update the history to include the entire updated EditorState
       const updatedHistory = [
         ...state.history.history.slice(0, state.history.currentIndex + 1),
-        { ...updatedEditorState }, // Save a copy of the updated state
+        { ...updatedEditorState },
       ]
 
       const newEditorState = {
@@ -254,29 +331,17 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
     }
     
     case 'UPDATE_ELEMENT': {
-      // Perform your logic to update the element in the state
       const updatedElements = updateAnElement(state.editor.elements, action)
-      
-      const updatedElementIsSelected = 
-        state.editor.selectedElement.id === action.payload.elementDetails.id
       
       const updatedEditorStateWithUpdate = {
         ...state.editor,
         elements: updatedElements,
-        selectedElement: updatedElementIsSelected
-          ? action.payload.elementDetails
-          : {
-              id: "",
-              content: [],
-              name: "",
-              styles: {},
-              type: null,
-            },
+        selectedElement: action.payload.elementDetails
       }
       
       const updatedHistoryWithUpdate = [
         ...state.history.history.slice(0, state.history.currentIndex + 1),
-        { ...updatedEditorStateWithUpdate }, // Save a copy of the updated state
+        { ...updatedEditorStateWithUpdate },
       ]
       
       return {
@@ -291,19 +356,32 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
     }
     
     case 'DELETE_ELEMENT': {
-      const updatedElements = deleteAnElement(state.editor.elements, action)
+      const updatedElements = deleteAnElement(state.editor.elements, action);
       
+      // Create a null selected element reference
+      const nullSelectedElement = {
+        id: "",
+        content: [],
+        name: "",
+        styles: {},
+        type: null,
+      };
+      
+      // Create the updated editor state with the element removed
       const updatedEditorState = {
         ...state.editor,
         elements: updatedElements,
-      }
+        selectedElement: nullSelectedElement
+      };
       
-      // Update history
+      // Add this state to history to enable undo
       const updatedHistory = [
         ...state.history.history.slice(0, state.history.currentIndex + 1),
-        { ...updatedEditorState },
-      ]
+        // Store a deep copy in history to ensure we can restore it properly
+        JSON.parse(JSON.stringify(updatedEditorState)),
+      ];
       
+      // Return the new state with updated history
       return {
         ...state,
         editor: updatedEditorState,
@@ -311,15 +389,17 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
           ...state.history,
           history: updatedHistory,
           currentIndex: updatedHistory.length - 1,
-        },
-      }
+        }
+      };
     }
     
     case 'REDO': {
       // Check if we can redo (not at the end of history)
       if (state.history.currentIndex < state.history.history.length - 1) {
-        const nextIndex = state.history.currentIndex + 1
-        const nextEditorState = { ...state.history.history[nextIndex] }
+        const nextIndex = state.history.currentIndex + 1;
+        
+        // Create a deep copy of the next state to ensure all elements are properly restored
+        const nextEditorState = JSON.parse(JSON.stringify(state.history.history[nextIndex]));
         
         const redoState = {
           ...state,
@@ -328,19 +408,24 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
             ...state.history,
             currentIndex: nextIndex,
           },
-        }
+        };
         
-        return redoState
+        console.log('Redoing to history index:', nextIndex);
+        return redoState;
       }
-      return state
+      return state;
     }
     
     case 'UNDO': {
       // Check if we can undo (not at the beginning of history)
       if (state.history.currentIndex > 0) {
-        const prevIndex = state.history.currentIndex - 1
-        const prevEditorState = { ...state.history.history[prevIndex] }
+        const prevIndex = state.history.currentIndex - 1;
         
+        // Create a deep copy of the previous state to ensure all elements are properly restored
+        // This is crucial for undoing deletions
+        const prevEditorState = JSON.parse(JSON.stringify(state.history.history[prevIndex]));
+        
+        // Update the editor state with the previous history state
         const undoState = {
           ...state,
           editor: prevEditorState,
@@ -348,11 +433,12 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
             ...state.history,
             currentIndex: prevIndex,
           },
-        }
+        };
         
-        return undoState
+        console.log('Undoing to history index:', prevIndex);
+        return undoState;
       }
-      return state
+      return state;
     }
     
     case 'LOAD_LOCALSTORAGE': {
@@ -447,7 +533,25 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
     }
     
     case 'CHANGE_CLICKED_ELEMENT': {
-      const clickedState = {
+      // Only update if the selected element is actually changing
+      const currentId = state.editor.selectedElement?.id || "";
+      const newId = action.payload.elementDetails?.id || "";
+      
+      if (currentId === newId) {
+        // If it's the same element, don't update state at all
+        return state;
+      }
+      
+      // Check if element exists if it's not null
+      if (newId !== "") {
+        const elementExists = elementExistsInArray(state.editor.elements, newId);
+        if (!elementExists) {
+          console.warn(`Element with ID ${newId} does not exist in elements array`);
+          return state;
+        }
+      }
+      
+      return {
         ...state,
         editor: {
           ...state.editor,
@@ -458,18 +562,8 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
             styles: {},
             type: null,
           },
-        },
-        history: {
-          ...state.history,
-          history: [
-            ...state.history.history.slice(0, state.history.currentIndex + 1),
-            { ...state.editor },// Save a copy of the current editor state
-          ],
-          currentIndex: state.history.currentIndex + 1,
-        },
-      }
-      
-      return clickedState
+        }
+      };
     }
     
     default:
@@ -535,8 +629,11 @@ const deleteAnElement = (
     )
   }
   
+  console.log('Deleting element:', action.payload.elementDetails.id)
+  
   return editorArray.filter((item) => {
     if (item.id === action.payload.elementDetails.id) {
+      console.log('Found element to delete:', item.id)
       return false
     } else if (item.content && Array.isArray(item.content)) {
       item.content = deleteAnElement(item.content, action)
@@ -544,3 +641,32 @@ const deleteAnElement = (
     return true
   })
 }
+
+// Export the debug function for use in other components
+export const debugState = (action: string, state: EditorState) => {
+  console.log(`[DEBUG] Action: ${action}`);
+  console.log(`[DEBUG] Selected Element:`, state.editor.selectedElement);
+  console.log(`[DEBUG] History Index:`, state.history.currentIndex);
+  console.log(`[DEBUG] History Length:`, state.history.history.length);
+  
+  // Check if history and editor state are in sync
+  const historyElement = state.history.history[state.history.currentIndex]?.selectedElement;
+  const editorElement = state.editor.selectedElement;
+  
+  if (historyElement?.id !== editorElement?.id || historyElement?.type !== editorElement?.type) {
+    console.warn("[DEBUG] WARNING: History and editor selectedElement not in sync!");
+    console.log("History selectedElement:", historyElement);
+    console.log("Editor selectedElement:", editorElement);
+  }
+}
+
+// Add this helper function to check if element exists
+const elementExistsInArray = (elements: EditorElement[], id: string): boolean => {
+  return elements.some(el => {
+    if (el.id === id) return true;
+    if (Array.isArray(el.content)) {
+      return elementExistsInArray(el.content, id);
+    }
+    return false;
+  });
+};

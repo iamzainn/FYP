@@ -10,8 +10,10 @@ import Editor from '@/components/editor/Editor'
 export default function EditorPage() {
   const params = useParams()
   const storeId = params.storeId as string
-  const userId  =  params.userId as string
+  const userId = params.userId as string
   const storePageId = params.storePageId as string
+  
+  console.log(`[EDITOR PAGE] Loading editor for page: ${storePageId}`);
   
   // In a real implementation, you would fetch the page details from your database
   const pageDetails: StorePage = {
@@ -28,20 +30,25 @@ export default function EditorPage() {
   return (
     <div className="fixed top-0 bottom-0 left-0 right-0 z-[20] bg-background overflow-hidden">
       <EditorProvider
-      storeId={storeId}
+        storeId={storeId}
         pageDetails={pageDetails}
       >
         <EditorNavigation 
+          // key={storePageId}
           userId={userId}
-            storeId={storeId}
+          storeId={storeId}
           pageDetails={pageDetails}
         />
         
         <div className="h-full flex justify-center">
-          <Editor storeId={storeId} />
+          <Editor storeId={storeId}
+          // key={storePageId}
+          />
         </div>
         
-        <EditorSidebar storeId={storeId} />
+        <EditorSidebar storeId={storeId}
+        // key={storePageId}
+        />
       </EditorProvider>
     </div>
   )

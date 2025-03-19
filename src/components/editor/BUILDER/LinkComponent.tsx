@@ -12,6 +12,13 @@ type Props = {
   element: EditorElement
 }
 
+interface LinkContent {
+  innerText: string;
+  href: string;
+  target?: '_self' | '_blank';
+  rel?: string;
+}
+
 const LinkComponent = (props: Props) => {
   const { dispatch, state } = useEditor()
   const styles = props.element.styles
@@ -38,6 +45,8 @@ const LinkComponent = (props: Props) => {
     })
   }
 
+  const content = props.element.content as LinkContent;
+  
   return (
     <div
       style={styles}
@@ -61,11 +70,15 @@ const LinkComponent = (props: Props) => {
           </Badge>
         )}
 
-      {!Array.isArray(props.element.content) && (
+      {!Array.isArray(content) && (
         <>
           {!state.editor.previewMode || state.editor.liveMode ? (
-            <Link href={props.element.content.href || '#'}>
-              {props.element.content.innerText}
+            <Link 
+              href={content.href || '#'}
+              target={content.target}
+              rel={content.rel}
+            >
+              {content.innerText}
             </Link>
           ) : (
             <span
@@ -78,6 +91,7 @@ const LinkComponent = (props: Props) => {
                     elementDetails: {
                       ...props.element,
                       content: {
+                        ...content,
                         innerText: spanElement.innerText,
                       },
                     },
@@ -85,7 +99,7 @@ const LinkComponent = (props: Props) => {
                 })
               }}
             >
-              {props.element.content.innerText}
+              {content.innerText}
             </span>
           )}
         </>

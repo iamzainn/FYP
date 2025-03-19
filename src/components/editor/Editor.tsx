@@ -3,11 +3,12 @@
 "use client"
 
 import clsx from 'clsx'
-import { useEditor } from '@/providers/editor/editor-provider'
+import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
 import React, { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { EyeOff } from 'lucide-react'
 import Recursive from './BUILDER/recursive'
+import { debugState as providerDebugState } from '@/providers/editor/editor-provider'
 
 interface EditorProps {
   storeId: string
@@ -16,16 +17,29 @@ interface EditorProps {
 
 const Editor = ({ storeId, liveMode }: EditorProps) => {
   const { dispatch, state } = useEditor()
-  console.log("current selected element ",state.editor.selectedElement)
+  
   const { liveMode: liveModeState, elements } = state.editor
+
+  // Add debugging for Editor component
+  const debugEditor = (message: string) => {
+    console.log(`[EDITOR] ${message}`);
+    console.log(`[EDITOR] Selected Element:`, state.editor.selectedElement);
+    console.log(`[EDITOR] Elements Count:`, state.editor.elements.length);
+  }
+  
+  // Debug when editor state changes
+  useEffect(() => {
+    debugEditor("Editor state changed");
+  }, [state.editor.selectedElement, state.editor.elements.length]);
 
   useEffect(() => {
     if (liveMode) {
       dispatch({
         type: 'TOGGLE_LIVE_MODE',
-      })
+      });
+      debugEditor("Live mode toggled");
     }
-  }, [liveMode,dispatch])
+  }, [liveMode, dispatch]);
 
   useEffect(() => {
     // const fetchData = async () => {
@@ -49,16 +63,41 @@ const Editor = ({ storeId, liveMode }: EditorProps) => {
 
   }, [storeId,dispatch])
 
-  const handleClick = () => {
-    console.log("clicked")
-    console.log("state : ",state)
-    dispatch({
-      type: 'CHANGE_CLICKED_ELEMENT',
-      payload: {
-        elementDetails: state.editor.selectedElement
+  const handleClick = (e: React.MouseEvent) => {
+    // Don't process clicks if they come from the settings panel
+    if ((e.target as HTMLElement).closest('.settings-panel')) {
+      return;
+    }
+    
+    debugEditor("Editor clicked");
+    
+    // Only dispatch if we need to change the selection
+    if (!state.editor.selectedElement?.id || !elementExistsInArray(state.editor.elements, state.editor.selectedElement.id)) {
+      dispatch({
+        type: 'CHANGE_CLICKED_ELEMENT',
+        payload: {
+          elementDetails: {
+            id: "",
+            content: [],
+            name: "",
+            styles: {},
+            type: null,
+          }
+        }
+      });
+      debugEditor("Cleared selection");
+    }
+  }
+
+  // Helper function to check if element exists
+  const elementExistsInArray = (elements: EditorElement[], id: string): boolean => {
+    return elements.some(el => {
+      if (el.id === id) return true;
+      if (Array.isArray(el.content)) {
+        return elementExistsInArray(el.content, id);
       }
-     
-    })
+      return false;
+    });
   }
 
   const handleUnpreview = (e: React.MouseEvent) => {

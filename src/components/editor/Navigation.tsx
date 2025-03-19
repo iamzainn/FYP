@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import Link from "next/link"
 import clsx from "clsx"
+import { debugState as providerDebugState } from '@/providers/editor/editor-provider'
 
 // Icons
 import { 
@@ -87,6 +88,14 @@ export function EditorNavigation({
   const router = useRouter()
   const { state, dispatch } = useEditor()
   
+  // Add debugging for Navigation component
+  const debugNavigation = (message: string) => {
+    console.log(`[NAVIGATION] ${message}`);
+    console.log(`[NAVIGATION] Current Device:`, state.editor.device);
+    console.log(`[NAVIGATION] Preview Mode:`, state.editor.previewMode);
+    console.log(`[NAVIGATION] Live Mode:`, state.editor.liveMode);
+  }
+  
   const [title, setTitle] = useState(pageDetails?.title || "Untitled Page")
   const [isSaving, setIsSaving] = useState(false)
   
@@ -140,32 +149,54 @@ export function EditorNavigation({
   
   // Handle device change
   const handleDeviceChange = (device: DeviceTypes) => {
+    debugNavigation(`Device changed to ${device}`);
     dispatch({
       type: 'CHANGE_DEVICE',
       payload: { device },
-    })
+    });
+    
+    // Call provider debug function for comprehensive info
+    if (typeof providerDebugState === 'function') {
+      providerDebugState('DEVICE_CHANGED', state);
+    }
   }
   
   // Handle preview mode toggle
   const togglePreviewMode = () => {
+    debugNavigation("Preview mode toggled");
     dispatch({
       type: 'TOGGLE_PREVIEW_MODE',
-    })
+    });
     dispatch({
-      type:'TOGGLE_LIVE_MODE'
-    })
+      type: 'TOGGLE_LIVE_MODE'
+    });
+    
+    // Call provider debug function for comprehensive info
+    if (typeof providerDebugState === 'function') {
+      providerDebugState('PREVIEW_TOGGLED', state);
+    }
   }
   
   // Handle undo/redo
   const handleUndo = () => {
-    dispatch({ type: 'UNDO' })
+    debugNavigation("Undo requested");
+    dispatch({ type: 'UNDO' });
+    
+    // Call provider debug function for comprehensive info
+    if (typeof providerDebugState === 'function') {
+      providerDebugState('UNDO', state);
+    }
   }
   
   const handleRedo = () => {
-    dispatch({ type: 'REDO' })
+    debugNavigation("Redo requested");
+    dispatch({ type: 'REDO' });
+    
+    // Call provider debug function for comprehensive info
+    if (typeof providerDebugState === 'function') {
+      providerDebugState('REDO', state);
+    }
   }
-  
- 
   
   // Keyboard shortcuts for undo/redo
   useEffect(() => {

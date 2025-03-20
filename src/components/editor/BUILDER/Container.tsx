@@ -59,7 +59,8 @@ const Container = ({ element }: ContainerProps) => {
     e.dataTransfer.setData('componentType', type)
   }
 
-  const handleDeleteElement = () => {
+  const handleDeleteElement = (e: React.MouseEvent) => {
+    e.stopPropagation()
     dispatch({
       type: 'DELETE_ELEMENT',
       payload: { elementDetails: element },

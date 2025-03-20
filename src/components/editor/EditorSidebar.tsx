@@ -23,6 +23,8 @@ type Props = {
 
 export function EditorSidebar({ storeId }: Props) {
   const { state } = useEditor()
+
+  console.log("EditorSidebar Component")
   
   // Don't render when in preview mode
   if (state.editor.previewMode) return null

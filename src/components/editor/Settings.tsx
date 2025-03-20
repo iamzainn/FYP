@@ -104,6 +104,8 @@ const customSettings: CustomSettingsMap = {
 const SettingsTab = () => {
   // Get editor state and dispatch from context
   const { state, dispatch } = useEditor()
+
+  console.log("Settings Component rendered")
   
   // Debug function for Settings component
   // const debugSettings = (message: string) => {
@@ -125,16 +127,7 @@ const SettingsTab = () => {
   // Only show settings when an element is selected
   const selectedElement = state.editor.selectedElement
 
-  // Debug when selected element changes
-  // useEffect(() => {
-  //   debugSettings("Selected element changed");
-  //   // Also call the provider debug function for comprehensive info
-  //   if (typeof providerDebugState === 'function') {
-  //     providerDebugState('SETTINGS_ELEMENT_CHANGED', state);
-  //   }
-  // }, [selectedElement, state]);
 
-  // Helper to get current opacity value as a number
   const getOpacityValue = (): number => {
     try {
       // If opacity exists, parse it, otherwise return default
@@ -205,7 +198,7 @@ const SettingsTab = () => {
   }
 
   // This is a simplified direct style update handler
-  const handleStyleChange = (property: string, value: string | number) => {
+   const handleStyleChange = (property: string, value: string | number) => {
     // If value is a number, add the appropriate unit
     if (typeof value === 'number' || /^[0-9.]+$/.test(value.toString())) {
       const unit = property.startsWith('margin') ? marginUnit : 

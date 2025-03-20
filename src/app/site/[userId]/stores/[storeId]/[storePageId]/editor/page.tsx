@@ -34,7 +34,7 @@ export default function EditorPage() {
         pageDetails={pageDetails}
       >
         <EditorNavigation 
-          // key={storePageId}
+        
           userId={userId}
           storeId={storeId}
           pageDetails={pageDetails}
@@ -42,12 +42,12 @@ export default function EditorPage() {
         
         <div className="h-full flex justify-center">
           <Editor storeId={storeId}
-          // key={storePageId}
+          
           />
         </div>
         
         <EditorSidebar storeId={storeId}
-        // key={storePageId}
+    
         />
       </EditorProvider>
     </div>

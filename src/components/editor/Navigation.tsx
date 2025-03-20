@@ -85,12 +85,16 @@ export function EditorNavigation({
   pageDetails,
   userId 
 }: EditorNavigationProps) {
-  const router = useRouter()
+  // const router = useRouter()
   const { state, dispatch } = useEditor()
+
+  console.log("Navigation Component")
   
   // Add debugging for Navigation component
   const debugNavigation = (message: string) => {
+
     console.log(`[NAVIGATION] ${message}`);
+    console.log(`[NAVIGATION] State:`, state.history.currentIndex)
     console.log(`[NAVIGATION] Current Device:`, state.editor.device);
     console.log(`[NAVIGATION] Preview Mode:`, state.editor.previewMode);
     console.log(`[NAVIGATION] Live Mode:`, state.editor.liveMode);
@@ -163,7 +167,7 @@ export function EditorNavigation({
   
   // Handle preview mode toggle
   const togglePreviewMode = () => {
-    debugNavigation("Preview mode toggled");
+    // debugNavigation("Preview mode toggled");
     dispatch({
       type: 'TOGGLE_PREVIEW_MODE',
     });

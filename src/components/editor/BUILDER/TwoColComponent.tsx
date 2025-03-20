@@ -1,7 +1,7 @@
 'use client'
 
 import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
-import React, { CSSProperties, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import Recursive from './recursive'
 import { Badge } from '@/components/ui/badge'
@@ -16,73 +16,41 @@ interface TwoColComponentProps {
 const TwoColComponent = ({ element }: TwoColComponentProps) => {
   console.log("TwoColComponent rendered")
   const { id, content, styles, type } = element
+  const [mounted, setMounted] = useState(false)
   const { dispatch, state } = useEditor()
   const dropHandler = useDropHandler()
 
-  useEffect(() => {
-    // Only run this effect when device changes
-    if (element.type === '2Col') {
-      // If the flex direction has been manually set to something other than row/column
-      // (like row-reverse or column-reverse), preserve that user choice
-      const isNonStandardFlexDirection = 
-        styles?.flexDirection === 'row-reverse' || 
-        styles?.flexDirection === 'column-reverse';
-        
-      // Only auto-update if it's not a custom value set by user
-      if (!isNonStandardFlexDirection) {
-        const updatedStyles = {
-          ...styles,
-          flexDirection: state.editor.device === 'Mobile' ? 'column' : 'row',
-        }
+  const handleStyleChange = (property: string, value: string ) => {
+    // If value is a number, add the appropriate unit
+   
+    // Dispatch the update to the editor
+    dispatch({
+      type: 'UPDATE_ELEMENT',
+      payload: {
+        elementDetails: {
+          ...state.editor.selectedElement,
+          styles: {
+            ...state.editor.selectedElement.styles,
+            [property]: value,
+          },
+        },
+      },
+    });
+  };
 
-        if (styles.flexDirection !== updatedStyles.flexDirection) {
-          dispatch({
-            type: 'UPDATE_ELEMENT',
-            payload: {
-              elementDetails: {
-                ...element,
-                styles: updatedStyles as CSSProperties,
-              },
-            },
-          })
-          
-          if (Array.isArray(content) && content.length === 2) {
-            const leftContainer = content[0]
-            const rightContainer = content[1]
-            
-            const childWidth = state.editor.device === 'Mobile' ? '100%' : '100%'
-            
-            dispatch({
-              type: 'UPDATE_ELEMENT',
-              payload: {
-                elementDetails: {
-                  ...leftContainer,
-                  styles: {
-                    ...leftContainer.styles,
-                    width: childWidth,
-                    marginBottom: state.editor.device === 'Mobile' ? '1rem' : '0',
-                  },
-                },
-              },
-            })
-            
-            dispatch({
-              type: 'UPDATE_ELEMENT',
-              payload: {
-                elementDetails: {
-                  ...rightContainer,
-                  styles: {
-                    ...rightContainer.styles,
-                    width: childWidth,
-                  },
-                },
-              },
-            })
-          }
-        }
+  useEffect(() => {
+    setMounted(true)
+    if(mounted){
+      // changes flexDirection based on device :
+      
+     
+      console.log("TwoColComponent style changes")
+      if(state.editor.device === 'Mobile'){
+        handleStyleChange('flexDirection', 'column')
       }
+
     }
-  }, [state.editor.device]) // Only depend on device changes
+  }, [state.editor.device])
 
   const handleOnClickBody = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -109,7 +77,9 @@ const TwoColComponent = ({ element }: TwoColComponentProps) => {
     e.dataTransfer.setData('componentType', type)
   }
 
-  const handleDeleteElement = () => {
+  const handleDeleteElement = (e:React.MouseEvent) => {
+    
+      e.stopPropagation();
     dispatch({
       type: 'DELETE_ELEMENT',
       payload: { elementDetails: element },
@@ -163,3 +133,5 @@ const TwoColComponent = ({ element }: TwoColComponentProps) => {
 }
 
 export default TwoColComponent
+
+

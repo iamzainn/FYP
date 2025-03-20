@@ -17,31 +17,29 @@ interface EditorProps {
 
 const Editor = ({ storeId, liveMode }: EditorProps) => {
   const { dispatch, state } = useEditor()
+
+  console.log("Editor Component rendered.")
   
-  const { liveMode: liveModeState, elements } = state.editor
+
 
   // Add debugging for Editor component
-  const debugEditor = (message: string) => {
-    console.log(`[EDITOR] ${message}`);
-    console.log(`[EDITOR] Selected Element:`, state.editor.selectedElement);
-    console.log(`[EDITOR] Elements Count:`, state.editor.elements.length);
-  }
-  
-  // Debug when editor state changes
-  useEffect(() => {
-    debugEditor("Editor state changed");
-  }, [state.editor.selectedElement, state.editor.elements.length]);
+  // const debugEditor = (message: string) => {
+  //   console.log(`[EDITOR] ${message}`);
+  //   console.log(`[EDITOR] Selected Element:`, state.editor.selectedElement);
+  //   console.log(`[EDITOR] Elements Count:`, state.editor.elements.length);
+  // }
+
 
   useEffect(() => {
     if (liveMode) {
       dispatch({
         type: 'TOGGLE_LIVE_MODE',
       });
-      debugEditor("Live mode toggled");
+      // debugEditor("Live mode toggled");
     }
   }, [liveMode, dispatch]);
 
-  useEffect(() => {
+  // useEffect(() => {
     // const fetchData = async () => {
     //   const response = await getPageDetails(storeId)
     //   if (!response) return
@@ -61,7 +59,7 @@ const Editor = ({ storeId, liveMode }: EditorProps) => {
 
      
 
-  }, [storeId,dispatch])
+  // }, [storeId,dispatch])
 
   const handleClick = (e: React.MouseEvent) => {
     // Don't process clicks if they come from the settings panel
@@ -69,10 +67,11 @@ const Editor = ({ storeId, liveMode }: EditorProps) => {
       return;
     }
     
-    debugEditor("Editor clicked");
+    // debugEditor("Editor clicked");
     
-    // Only dispatch if we need to change the selection
+   
     if (!state.editor.selectedElement?.id || !elementExistsInArray(state.editor.elements, state.editor.selectedElement.id)) {
+      console.log("Cleared selection in editor component")
       dispatch({
         type: 'CHANGE_CLICKED_ELEMENT',
         payload: {
@@ -85,7 +84,7 @@ const Editor = ({ storeId, liveMode }: EditorProps) => {
           }
         }
       });
-      debugEditor("Cleared selection");
+  
     }
   }
 

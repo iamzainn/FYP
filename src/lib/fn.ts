@@ -272,7 +272,7 @@ export const useDropHandler = () => {
               const leftColId = v4();
               const rightColId = v4();
               const imageId = v4();
-              const badgeId = v4();
+              // const badgeId = v4();
               const titleId = v4();
               const priceId = v4();
               const descId = v4();
@@ -335,27 +335,10 @@ export const useDropHandler = () => {
                                       alt: 'Product image',
                                       
                                     },
-                                  },
-                                  // Badge Element
-                                  {
-                                    id: badgeId,
-                                    name: 'Badge',
-                                    type: 'badge',
-                                    styles: {
-                                      position: 'absolute',
-                                      top: '10px',
-                                      right: '10px',
-                                      backgroundColor: '#0091ff',
-                                      color: 'white',
-                                      borderRadius: '9999px',
-                                      padding: '0.25rem 0.5rem',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 'bold',
-                                    },
-                                    content: {
-                                      innerText: 'New',
-                                    },
                                   }
+                                  // Badge Element
+                                  
+                                  
                                 ],
                               },
                               // Right Column (Content Container)

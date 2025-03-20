@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
 import clsx from 'clsx'
 import { Trash } from 'lucide-react'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Recursive from '../../BUILDER/recursive'
 
 interface ProductCardProps {
@@ -24,6 +24,7 @@ const ProductCardComponent = ({ element }: ProductCardProps) => {
   // Extract required properties from element
   const { content, styles, id, name } = element
   const { dispatch, state } = useEditor()
+  const [mounted, setMounted] = useState(false)
 
   /**
    * Event Handlers
@@ -41,12 +42,57 @@ const ProductCardComponent = ({ element }: ProductCardProps) => {
   }
 
   // Handle element deletion from editor
-  const handleDeleteElement = () => {
+  const handleDeleteElement = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent click from bubbling to parent
     dispatch({
       type: 'DELETE_ELEMENT',
       payload: { elementDetails: element },
     })
   }
+
+  // Handle updating the nested 2Col component for responsiveness
+  const updateNestedTwoColLayout = () => {
+    if (!Array.isArray(content)) return;
+    
+    // Find the 2Col component within content
+    const twoColElement = content.find(item => item.type === '2Col');
+    if (!twoColElement) return;
+    
+    // Create updated version of the 2Col with modified flexDirection
+    const updatedTwoCol = {
+      ...twoColElement,
+      styles: {
+        ...twoColElement.styles,
+        flexDirection: state.editor.device === 'Mobile' ? 'column' : 'row'
+      }
+    };
+    
+    // Find all child elements except the 2Col
+    const otherElements = content.filter(item => item.id !== twoColElement.id);
+    
+    // Create updated content array with the modified 2Col
+    const updatedContent = [...otherElements, updatedTwoCol];
+    
+    // Update the entire product card with the new content
+    dispatch({
+      type: 'UPDATE_ELEMENT',
+      payload: {
+        elementDetails: {
+          ...element,
+          content: updatedContent as EditorElement[]
+        }
+      }
+    });
+  }
+  
+  // Add effect for responsive behavior
+  useEffect(() => {
+    setMounted(true)
+    if (mounted) {
+      console.log("ProductCardComponent responding to device change")
+      updateNestedTwoColLayout()
+    }
+  }, [state.editor.device, mounted])
 
   // Check if element is currently selected
   const isSelected = state.editor.selectedElement.id === id

@@ -156,7 +156,7 @@ export function EditorNavigation({
     debugNavigation(`Device changed to ${device}`);
     dispatch({
       type: 'CHANGE_DEVICE',
-      payload: { device },
+      payload: { device, dispatch },
     });
     
     // Call provider debug function for comprehensive info

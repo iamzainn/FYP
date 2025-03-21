@@ -1,7 +1,7 @@
 'use client'
 
 import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import clsx from 'clsx'
 import Recursive from './recursive'
 import { Badge } from '@/components/ui/badge'
@@ -16,46 +16,14 @@ interface TwoColComponentProps {
 const TwoColComponent = ({ element }: TwoColComponentProps) => {
   console.log("Two Col Component rendered")
   const { id, content, styles, type } = element
-  const [mounted, setMounted] = useState(false)
+ 
   const { dispatch, state } = useEditor()
   const dropHandler = useDropHandler()
 
-  // useEffect(() => {
-  //   setMounted(true)
-  // }, [])
 
-  const handleStyleChange = (property: string, value: string ) => {
-    // If value is a number, add the appropriate unit
-   
-    // Dispatch the update to the editor
-    dispatch({
-      type: 'UPDATE_ELEMENT',
-      payload: {
-        elementDetails: {
-          ...state.editor.selectedElement,
-          styles: {
-            ...state.editor.selectedElement.styles,
-            [property]: value,
-          },
-        },
-      },
-    });
-  };
 
-  // useEffect(() => {
-    
-  //   if(mounted){
-  //     // changes flexDirection based on device :
-  //     console.log("TwoColComponent already mounted")
-     
-      
-  //     if(state.editor.device === 'Mobile'){
-  //       console.log("TwoColComponent style changes")
-  //       handleStyleChange('flexDirection', 'column')
-  //     }
+ 
 
-  //   }
-  // }, [state.editor.device])
 
   const handleOnClickBody = (e: React.MouseEvent) => {
     e.stopPropagation()

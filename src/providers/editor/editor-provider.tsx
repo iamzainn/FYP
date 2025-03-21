@@ -103,12 +103,20 @@ export type EditorAction =
       type: 'CHANGE_DEVICE'
       payload: {
         device: DeviceTypes
+        dispatch: React.Dispatch<EditorAction>
       }
     }
   | {
       type: 'CHANGE_CLICKED_ELEMENT'
       payload: {
         elementDetails: EditorElement 
+      }
+    }
+  | {
+      type: 'APPLY_DEVICE_STYLES'
+      payload: {
+        device: DeviceTypes
+        updatedElements: EditorElement[]
       }
     }
   
@@ -185,7 +193,7 @@ export const EditorProvider = ({
     console.log("EditorProvider state:", state)
   }, [state])
   
-  // Create a wrapped dispatch function to intercept CHANGE_CLICKED_ELEMENT actions
+  
   // const wrappedDispatch = (action: EditorAction) => {
   //   if (action.type === 'CHANGE_CLICKED_ELEMENT') {
   //     const newElementId = action.payload.elementDetails?.id || "";
@@ -304,6 +312,86 @@ export const useEditor = () => {
     throw new Error('useEditor must be used within an EditorProvider')
   }
   return context
+}
+
+/**
+ * ResponsivnessHandle - Processes all elements for responsive styling
+ * Collects changes and dispatches a single action for one history entry
+ * 
+ * @param device - Current device type (Desktop, Mobile, Tablet)
+ * @param elements - Array of editor elements to process
+ * @param dispatch - Function to dispatch updates
+ */
+const ResponsivnessHandle = (
+  device: DeviceTypes, 
+  elements: EditorElement[], 
+  dispatch: React.Dispatch<EditorAction>
+) => {
+  console.log("hello");
+  console.log(`ResponsivnessHandle: Device changed to ${device}`);
+  
+  // Store all elements that need updates
+  const elementsToUpdate: EditorElement[] = [];
+  
+  // Process all elements recursively and collect updates
+  const processElementsRecursively = (elements: EditorElement[]) => {
+    elements.forEach(element => {
+      let needsUpdate = false;
+      const updatedStyles = { ...element.styles } as React.CSSProperties;
+      
+      // Handle __body element - adjust font size for mobile
+      if (element.id === '__body') {
+        if (device === 'Mobile') {
+          updatedStyles.fontSize = '14px'; // smaller font for mobile
+          needsUpdate = true;
+          console.log(`Adjusting __body font size for mobile`);
+        } else {
+          // Reset to normal font size for other devices
+          updatedStyles.fontSize = '16px'; 
+          needsUpdate = true;
+          console.log(`Resetting __body font size for ${device}`);
+        }
+      }
+      
+      // Handle 2Col components
+      if (element.type === '2Col') {
+        // Update flexDirection based on device
+        updatedStyles.flexDirection = device === 'Mobile' ? 'column' : 'row';
+        needsUpdate = true;
+        console.log(`Found 2Col component ${element.id}, updating flexDirection to ${updatedStyles.flexDirection}`);
+      }
+      
+      // If this element needs an update, add it to our collection
+      if (needsUpdate) {
+        elementsToUpdate.push({
+          ...element,
+          styles: updatedStyles
+        });
+      }
+      
+      // Continue recursion for container elements
+      if (Array.isArray(element.content)) {
+        processElementsRecursively(element.content);
+      }
+    });
+  };
+  
+  // Start the recursive processing to collect all elements that need updates
+  processElementsRecursively(elements);
+  
+  // If we have elements to update, dispatch a single action with all updates
+  if (elementsToUpdate.length > 0) {
+    console.log(`Applying responsive styles for ${elementsToUpdate.length} elements with a single history entry`);
+    
+    // Dispatch a single action with all elements to update
+    dispatch({
+      type: 'APPLY_DEVICE_STYLES',
+      payload: {
+        device,
+        updatedElements: elementsToUpdate
+      }
+    });
+  }
 }
 
 const editorReducer = (state: EditorState = initialState, action: EditorAction) => {
@@ -546,15 +634,27 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
     }
     
     case 'CHANGE_DEVICE': {
+      const newDevice = action.payload.device;
+      const dispatch = action.payload.dispatch;
+      
+      // Create updated state first
       const changedDeviceState = {
         ...state,
         editor: {
           ...state.editor,
-          device: action.payload.device,
+          device: newDevice,
         },
-      }
+      };
       
-      return changedDeviceState
+      // Call the ResponsivnessHandle function directly with the required parameters
+      // We need to do this before returning so we have access to dispatch
+      // Using setTimeout to ensure state updates complete first
+      const elements = state.editor.elements;
+      setTimeout(() => {
+        ResponsivnessHandle(newDevice, elements, dispatch);
+      }, 0);
+      
+      return changedDeviceState;
     }
     
     case 'CHANGE_CLICKED_ELEMENT': {
@@ -599,6 +699,44 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
       console.log('Element selected, new history index:', updatedHistory.length - 1);
       
       // Return the new state with updated history
+      return {
+        ...state,
+        editor: updatedEditorState,
+        history: {
+          ...state.history,
+          history: updatedHistory,
+          currentIndex: updatedHistory.length - 1,
+        }
+      };
+    }
+    
+    case 'APPLY_DEVICE_STYLES': {
+      const {  updatedElements } = action.payload;
+      
+      // Create a copy of the elements array
+      let newElements = [...state.editor.elements];
+      
+      // Apply updates to all elements that need changes
+      updatedElements.forEach(elementToUpdate => {
+        // Update the element in the tree
+        newElements = updateElementById(newElements, elementToUpdate);
+      });
+      
+      // Create the updated editor state with all style changes
+      const updatedEditorState = {
+        ...state.editor,
+        elements: newElements
+      };
+      
+      // Add this state to history (just one entry for all updates)
+      const updatedHistory = [
+        ...state.history.history.slice(0, state.history.currentIndex + 1),
+        JSON.parse(JSON.stringify(updatedEditorState)), // Deep clone for history
+      ];
+      
+      console.log(`Device styles applied, creating single history entry at index: ${updatedHistory.length - 1}`);
+      
+      // Return the new state with a single updated history entry
       return {
         ...state,
         editor: updatedEditorState,
@@ -714,5 +852,29 @@ const elementExistsInArray = (elements: EditorElement[], id: string): boolean =>
       return elementExistsInArray(el.content, id);
     }
     return false;
+  });
+};
+
+// Helper function to update an element by ID in the elements tree
+const updateElementById = (
+  elements: EditorElement[],
+  elementToUpdate: EditorElement
+): EditorElement[] => {
+  return elements.map(element => {
+    // If this is the element to update, return the updated version
+    if (element.id === elementToUpdate.id) {
+      return elementToUpdate;
+    }
+    
+    // If this element has child elements, recursively update them
+    if (Array.isArray(element.content)) {
+      return {
+        ...element,
+        content: updateElementById(element.content, elementToUpdate)
+      };
+    }
+    
+    // Otherwise return the element unchanged
+    return element;
   });
 };

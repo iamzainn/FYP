@@ -5,9 +5,12 @@ import { createContext, useContext, useReducer, ReactNode, useEffect,   } from '
 
 export type DeviceTypes = 'Desktop' | 'Mobile' | 'Tablet'
 
+
+
+
 export type EditorElement = {
   id: string
-  styles: React.CSSProperties
+  styles: React.CSSProperties 
   name: string
   type: EditorBtns
   content: EditorElement[] | {
@@ -574,17 +577,35 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
         }
       }
       
+      // Create the updated editor state with the new selected element
+      const updatedEditorState = {
+        ...state.editor,
+        selectedElement: action.payload.elementDetails || {
+          id: '',
+          content: [],
+          name: '',
+          styles: {},
+          type: null,
+        }
+      };
+      
+      // Add this state to history to enable undo/redo for selections
+      const updatedHistory = [
+        ...state.history.history.slice(0, state.history.currentIndex + 1),
+        // Store a deep copy in history to ensure we can restore it properly
+        JSON.parse(JSON.stringify(updatedEditorState)),
+      ];
+      
+      console.log('Element selected, new history index:', updatedHistory.length - 1);
+      
+      // Return the new state with updated history
       return {
         ...state,
-        editor: {
-          ...state.editor,
-          selectedElement: action.payload.elementDetails || {
-            id: '',
-            content: [],
-            name: '',
-            styles: {},
-            type: null,
-          },
+        editor: updatedEditorState,
+        history: {
+          ...state.history,
+          history: updatedHistory,
+          currentIndex: updatedHistory.length - 1,
         }
       };
     }

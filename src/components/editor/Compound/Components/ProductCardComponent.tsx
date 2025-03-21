@@ -24,7 +24,7 @@ const ProductCardComponent = ({ element }: ProductCardProps) => {
   // Extract required properties from element
   const { content, styles, id, name } = element
   const { dispatch, state } = useEditor()
-  const [mounted, setMounted] = useState(false)
+  // const [mounted, setMounted] = useState(false)
 
   /**
    * Event Handlers
@@ -86,13 +86,13 @@ const ProductCardComponent = ({ element }: ProductCardProps) => {
   }
   
   // Add effect for responsive behavior
-  useEffect(() => {
-    setMounted(true)
-    if (mounted) {
-      console.log("ProductCardComponent responding to device change")
-      updateNestedTwoColLayout()
-    }
-  }, [state.editor.device, mounted])
+  // useEffect(() => {
+  //   setMounted(true)
+  //   if (mounted) {
+  //     console.log("ProductCard Component responding to device change")
+  //     updateNestedTwoColLayout()
+  //   }
+  // }, [state.editor.device, mounted])
 
   // Check if element is currently selected
   const isSelected = state.editor.selectedElement.id === id

@@ -91,14 +91,7 @@ export function EditorNavigation({
   console.log("Navigation Component")
   
   // Add debugging for Navigation component
-  const debugNavigation = (message: string) => {
-
-    console.log(`[NAVIGATION] ${message}`);
-    console.log(`[NAVIGATION] State:`, state.history.currentIndex)
-    console.log(`[NAVIGATION] Current Device:`, state.editor.device);
-    console.log(`[NAVIGATION] Preview Mode:`, state.editor.previewMode);
-    console.log(`[NAVIGATION] Live Mode:`, state.editor.liveMode);
-  }
+  
   
   const [title, setTitle] = useState(pageDetails?.title || "Untitled Page")
   const [isSaving, setIsSaving] = useState(false)
@@ -153,7 +146,7 @@ export function EditorNavigation({
   
   // Handle device change
   const handleDeviceChange = (device: DeviceTypes) => {
-    debugNavigation(`Device changed to ${device}`);
+    // debugNavigation(`Device changed to ${device}`);
     dispatch({
       type: 'CHANGE_DEVICE',
       payload: { device, dispatch },
@@ -183,7 +176,7 @@ export function EditorNavigation({
   
   // Handle undo/redo
   const handleUndo = () => {
-    debugNavigation("Undo requested");
+    // debugNavigation("Undo requested");
     dispatch({ type: 'UNDO' });
     
     // Call provider debug function for comprehensive info
@@ -193,7 +186,7 @@ export function EditorNavigation({
   }
   
   const handleRedo = () => {
-    debugNavigation("Redo requested");
+    // debugNavigation("Redo requested");
     dispatch({ type: 'REDO' });
     
     // Call provider debug function for comprehensive info

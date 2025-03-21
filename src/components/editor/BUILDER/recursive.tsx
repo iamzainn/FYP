@@ -9,13 +9,9 @@ import ButtonComponent from './ButtonComponent'
 import ImageComponent from './ImageComponent'
 import DividerComponent from './DividerComponent'
 import SpacerComponent from '../SpacerComponent'
-
 import BadgeComponent from '../BadgeComponent'
 import ProductCardComponent from '../Compound/Components/ProductCardComponent'
 import TwoColComponent from './TwoColComponent'
-
-
-
 
 type Props = {
   element: EditorElement
@@ -53,6 +49,7 @@ const Recursive = ({ element }: Props) => {
 
     case 'badge':
       return <BadgeComponent element={element} />
+    
     default:
       return null
   }

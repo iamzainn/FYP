@@ -18,3 +18,5 @@ export type EditorBtns =
   | 'badge'
   | 'icon'
   | 'productCard'
+  | 'multiColumn'
+  

@@ -17,6 +17,7 @@ import ProductCardPlaceholder from "./Compound/ProductCardPlaceholder"
 
 
 
+
 const TextPlaceholder = () => {
   const handleDragStart = (e: React.DragEvent, type: EditorBtns) => {
     if (type === null) return
@@ -101,6 +102,7 @@ const ComponentsTab = () => {
       id: '2Col',
       group: 'layout',
     },
+    
     {
       Component: <VideoPlaceholder />,
       label: 'Video',

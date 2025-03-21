@@ -25,7 +25,9 @@ export type EditorElement = {
     borderTopRadius?: string,
     borderRightRadius?: string,
     borderBottomRadius?: string,
-    borderLeftRadius?: string
+    borderLeftRadius?: string,
+    columnCount?: number,
+    columnGap?: string
   }
 }
 
@@ -359,6 +361,14 @@ const ResponsivnessHandle = (
         updatedStyles.flexDirection = device === 'Mobile' ? 'column' : 'row';
         needsUpdate = true;
         console.log(`Found 2Col component ${element.id}, updating flexDirection to ${updatedStyles.flexDirection}`);
+      }
+      
+      // In responsiveness handler for multiColumn
+      if (element.type === 'multiColumn') {
+        // Update flexDirection based on device
+        updatedStyles.flexDirection = device === 'Mobile' ? 'column' : 'row';
+        needsUpdate = true;
+        console.log(`Found MultiColumn component ${element.id}, updating flexDirection to ${updatedStyles.flexDirection}`);
       }
       
       // If this element needs an update, add it to our collection

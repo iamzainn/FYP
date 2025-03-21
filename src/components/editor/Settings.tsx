@@ -2,7 +2,7 @@
 
 "use client"
 
-import { useEditor } from "@/providers/editor/editor-provider"
+import { EditorElement, useEditor } from "@/providers/editor/editor-provider"
 import {
   Accordion,
   AccordionContent,
@@ -17,10 +17,7 @@ import {
   AlignHorizontalSpaceAround,
   AlignHorizontalSpaceBetween,
   AlignHorizontalJustifyStart,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
+ 
   Minus,
   Plus,
   ArrowDown,
@@ -34,6 +31,16 @@ import {
   
 } from "lucide-react"
 import { useState } from "react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { v4 } from "uuid"
+import { defaultStyles } from "./BUILDER/Container"
 
 
 
@@ -58,9 +65,21 @@ interface CustomSettingsMap {
     settings: {
       id: string;
       label: string;
-      type: 'text' | 'color' | 'number' | 'select';
+      type: 'text' | 'color' | 'number' | 'select' | 'button';
       placeholder?: string;
       options?: { value: string; label: string }[];
+      onClick?: () => void;
+    }[];
+  };
+  '2Col': {
+    title: string;
+    settings: {
+      id: string;
+      label: string;
+      type: 'text' | 'color' | 'number' | 'select' | 'button';
+      placeholder?: string;
+      options?: { value: string; label: string }[];
+      onClick?: () => void;
     }[];
   };
   // Add other element types here in future
@@ -98,8 +117,29 @@ const customSettings: CustomSettingsMap = {
         ]
       }
     ]
+  },
+  '2Col': {
+    title: 'Column Settings',
+    settings: [
+      {
+        id: 'addColumn',
+        label: 'Add Column',
+        type: 'button'
+      }
+    ]
   }
 };
+
+// Define font family options
+const fontFamilyOptions = [
+  { value: "var(--font-inter)", label: "Inter" },
+  { value: "var(--font-roboto)", label: "Roboto" },
+  { value: "var(--font-poppins)", label: "Poppins" },
+  { value: "var(--font-playfair)", label: "Playfair Display" },
+  { value: "var(--font-montserrat)", label: "Montserrat" },
+  { value: "var(--font-opensans)", label: "Open Sans" },
+  { value: "var(--font-sourcecode)", label: "Source Code Pro" },
+];
 
 const SettingsTab = () => {
   // Get editor state and dispatch from context
@@ -149,7 +189,42 @@ const SettingsTab = () => {
     }
   };
 
-  // Update handleChangeCustomValues to handle content properties
+  // Handle adding a new column to 2Col component
+  const handleAddColumn = () => {
+    if (selectedElement && selectedElement.type === '2Col') {
+      // Create a new column with the same properties as existing ones
+      const newColumn = {
+        content: [],
+        id: v4(),
+        name: 'Container',
+        styles: { 
+          ...defaultStyles, 
+          width: '100%' 
+        },
+        type: 'container',
+      };
+      
+      // Get the current columns and add the new one
+      const updatedContent = Array.isArray(selectedElement.content) 
+        ? [...selectedElement.content, newColumn]
+        : [newColumn];
+      
+      // Update the element
+      dispatch({
+        type: 'UPDATE_ELEMENT',
+        payload: {
+          elementDetails: {
+            ...selectedElement,
+            content: updatedContent as EditorElement[]
+          }
+        }
+      });
+      
+      console.log('Added new column to 2Col component');
+    }
+  };
+
+  // Update the handleChangeCustomValues function to handle button clicks
   const handleChangeCustomValues = (e: any) => {
     try {
       const settingProperty = e.target.id
@@ -159,7 +234,7 @@ const SettingsTab = () => {
       
       // Check if this is a custom content property or a style property
       const isCustomProperty = selectedElement.type === 'link' && 
-        ['href', 'target', 'rel'].includes(settingProperty)
+        ['href', 'target', 'rel'].includes(settingProperty);
       
       if (isCustomProperty) {
         // Update content object
@@ -174,7 +249,7 @@ const SettingsTab = () => {
               },
             }
           }
-        })
+        });
       } else {
         // Update styles object
       dispatch({
@@ -188,14 +263,14 @@ const SettingsTab = () => {
               },
             }
           }
-        })
+        });
       }
 
-      console.log('Updated property successfully')
+      console.log('Updated property successfully');
     } catch (error) {
-      console.error('Error updating property:', error)
+      console.error('Error updating property:', error);
     }
-  }
+  };
 
   // This is a simplified direct style update handler
    const handleStyleChange = (property: string, value: string | number) => {
@@ -258,6 +333,40 @@ const SettingsTab = () => {
     )
   }
 
+  // Now add the font family dropdown in your typography section
+  const renderTypographySettings = () => {
+    return (
+      <div className="grid gap-4 px-6">
+        {/* Font Family Dropdown */}
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="fontFamily">Font Family</Label>
+          <Select
+            value={selectedElement.styles.fontFamily as string || ""}
+            onValueChange={(value: string | number) => handleStyleChange("fontFamily", value)}
+          >
+            <SelectTrigger id="fontFamily">
+              <SelectValue placeholder="Select Font" />
+            </SelectTrigger>
+            <SelectContent>
+              {fontFamilyOptions.map((font) => (
+                <SelectItem 
+                  key={font.value} 
+                  value={font.value}
+                  style={{ fontFamily: font.value }}
+                >
+                  {font.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Your existing typography controls like font size, etc. */}
+        {/* ... */}
+      </div>
+    );
+  };
+
   return (
     <div className="p-4 overflow-auto max-w-md mx-auto">
       <h3 className="text-lg font-medium mb-4">Settings</h3>
@@ -304,6 +413,15 @@ const SettingsTab = () => {
                       ))}
                     </select>
                   )}
+                  {setting.type === 'button' && (
+                    <button
+                      id={setting.id}
+                      onClick={selectedElement.type === '2Col' ? handleAddColumn : undefined}
+                      className="bg-primary text-white p-2 rounded-md hover:bg-primary/90 transition-colors"
+                    >
+                      {setting.label}
+                    </button>
+                  )}
               </div>
               ))}
             </AccordionContent>
@@ -316,242 +434,7 @@ const SettingsTab = () => {
             Typography
           </AccordionTrigger>
           <AccordionContent className="flex flex-col gap-2">
-            {/* Color input with color picker */}
-            <div className="flex flex-col gap-2">
-              <p className="text-muted-foreground">Color</p>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  id="color"
-                  onChange={handleChangeCustomValues}
-                  value={state.editor.selectedElement.styles?.color as string || '#000000'}
-                  className="w-10 h-10 p-1 cursor-pointer border rounded"
-                />
-                <input
-                  id="color"
-                  onChange={handleChangeCustomValues}
-                  value={state.editor.selectedElement.styles?.color as string || ''}
-                  className="border p-2 rounded-md flex-1"
-                  placeholder="#000000 or rgb(0,0,0)"
-                />
-              </div>
-            </div>
-            
-            {/* Size input */}
-            {/* Size input with unit selection */}
-<div className="flex flex-col gap-2">
-  <p className="text-muted-foreground">Font Size</p>
-  <div className="flex items-center gap-2">
-    <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-      <input
-        id="fontSize"
-                    onChange={handleChangeCustomValues}
-                    value={state.editor.selectedElement.styles?.fontSize as string || ''}
-        className="flex-1 p-2 border-0 focus:ring-0"
-        placeholder="16px"
-      />
-      <div className="flex items-center border-l h-full">
-        <button
-          type="button"
-          className="px-2 py-2 hover:bg-gray-100"
-          onClick={() => {
-                        const currentValue = state.editor.selectedElement.styles?.fontSize as string || '16px';
-                        const numValue = parseFloat(currentValue) || 16;
-                        const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
-            const step = unit === 'px' ? 1 : 0.1;
-                        handleChangeCustomValues({
-              target: {
-                id: 'fontSize',
-                value: `${Math.max(0, numValue - step)}${unit}`,
-              },
-            });
-          }}
-        >
-          <Minus size={14} />
-        </button>
-        <button
-          type="button"
-          className="px-2 py-2 hover:bg-gray-100"
-          onClick={() => {
-                        const currentValue = state.editor.selectedElement.styles?.fontSize as string || '16px';
-                        const numValue = parseFloat(currentValue) || 16;
-                        const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
-            const step = unit === 'px' ? 1 : 0.1;
-                        handleChangeCustomValues({
-              target: {
-                id: 'fontSize',
-                value: `${numValue + step}${unit}`,
-              },
-            });
-          }}
-        >
-          <Plus size={14} />
-        </button>
-      </div>
-    </div>
-    <select
-      className="border p-2 rounded-md w-20"
-                  value={(state.editor.selectedElement.styles?.fontSize as string || '16px').replace(/[\d.-]/g, '') || 'px'}
-      onChange={(e) => {
-                    const currentValue = state.editor.selectedElement.styles?.fontSize as string || '16px';
-                    const numValue = parseFloat(currentValue) || 16;
-                    handleChangeCustomValues({
-          target: {
-            id: 'fontSize',
-            value: `${numValue}${e.target.value}`,
-          },
-        });
-      }}
-    >
-      <option value="px">px</option>
-      <option value="%">%</option>
-      <option value="em">em</option>
-      <option value="rem">rem</option>
-    </select>
-  </div>
-</div>
-            
-            {/* Font Weight */}
-            <div className="flex flex-col gap-2">
-              <p className="text-muted-foreground">Font Weight</p>
-              <select
-                id="fontWeight"
-                onChange={handleChangeCustomValues}
-                value={state.editor.selectedElement.styles?.fontWeight as string || ''}
-                className="border p-2 rounded-md"
-              >
-                <option value="">Default</option>
-                <option value="normal">Normal (400)</option>
-                <option value="bold">Bold (700)</option>
-                <option value="100">Thin (100)</option>
-                <option value="200">Extra Light (200)</option>
-                <option value="300">Light (300)</option>
-                <option value="400">Regular (400)</option>
-                <option value="500">Medium (500)</option>
-                <option value="600">Semi Bold (600)</option>
-                <option value="700">Bold (700)</option>
-                <option value="800">Extra Bold (800)</option>
-                <option value="900">Black (900)</option>
-              </select>
-            </div>
-
-            {/* Letter Spacing */}
-            <div className="flex flex-col gap-2">
-              <p className="text-muted-foreground">Letter Spacing</p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 flex items-center border rounded-md overflow-hidden">
-                  <input
-                    id="letterSpacing"
-                    onChange={handleChangeCustomValues}
-                    value={state.editor.selectedElement.styles?.letterSpacing as string || ''}
-                    className="flex-1 p-2 border-0 focus:ring-0"
-                    placeholder="0px"
-                  />
-                  <div className="flex items-center border-l h-full">
-                    <button
-                      type="button"
-                      className="px-2 py-2 hover:bg-gray-100"
-                      onClick={() => {
-                        const currentValue = state.editor.selectedElement.styles?.letterSpacing as string || '0px';
-                        const numValue = parseFloat(currentValue) || 0;
-                        const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
-                        const step = unit === 'px' ? 1 : 0.1;
-                        handleChangeCustomValues({
-                          target: {
-                            id: 'letterSpacing',
-                            value: `${Math.max(0, numValue - step)}${unit}`,
-                          },
-                        });
-                      }}
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      className="px-2 py-2 hover:bg-gray-100"
-                      onClick={() => {
-                        const currentValue = state.editor.selectedElement.styles?.letterSpacing as string || '0px';
-                        const numValue = parseFloat(currentValue) || 0;
-                        const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
-                        const step = unit === 'px' ? 1 : 0.1;
-                        handleChangeCustomValues({
-                          target: {
-                            id: 'letterSpacing',
-                            value: `${numValue + step}${unit}`,
-                          },
-                        });
-                      }}
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                </div>
-                <select
-                  className="border p-2 rounded-md w-20"
-                  value={(state.editor.selectedElement.styles?.letterSpacing as string || '0px').replace(/[\d.-]/g, '') || 'px'}
-                  onChange={(e) => {
-                    const currentValue = state.editor.selectedElement.styles?.letterSpacing as string || '0px';
-                    const numValue = parseFloat(currentValue) || 0;
-                    handleChangeCustomValues({
-                      target: {
-                        id: 'letterSpacing',
-                        value: `${numValue}${e.target.value}`,
-                      },
-                    });
-                  }}
-                >
-                  <option value="px">px</option>
-                  <option value="em">em</option>
-                  <option value="rem">rem</option>
-                </select>
-              </div>
-            </div>
-            
-            {/* Text Alignment */}
-            <div className="flex flex-col gap-2 mt-2">
-              <p className="text-muted-foreground">Text Alignment</p>
-              <Tabs
-                onValueChange={(e) => {
-                  handleChangeCustomValues({
-                    target: {
-                      id: 'textAlign',
-                      value: e,
-                    },
-                  })
-                }}
-                value={state.editor.selectedElement.styles?.textAlign as string || 'left'}
-                defaultValue="left"
-              >
-                <TabsList className="flex items-center flex-row justify-between border-[1px] rounded-md bg-transparent h-fit gap-4">
-                  <TabsTrigger
-                    value="left"
-                    className="w-10 h-10 p-0 data-[state=active]:bg-muted"
-                  >
-                    <AlignLeft size={18} />
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="center"
-                    className="w-10 h-10 p-0 data-[state=active]:bg-muted"
-                  >
-                    <AlignCenter size={18} />
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="right"
-                    className="w-10 h-10 p-0 data-[state=active]:bg-muted"
-                  >
-                    <AlignRight size={18} />
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="justify"
-                    className="w-10 h-10 p-0 data-[state=active]:bg-muted"
-                  >
-                    <AlignJustify size={18} />
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-            
-            {/* Other typography options can be added here */}
+            {renderTypographySettings()}
           </AccordionContent>
         </AccordionItem>
         

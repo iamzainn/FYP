@@ -82,6 +82,39 @@ interface CustomSettingsMap {
       onClick?: () => void;
     }[];
   };
+  'grid': {
+    title: string;
+    settings: {
+      id: string;
+      label: string;
+      type: 'text' | 'color' | 'number' | 'select' | 'button';
+      placeholder?: string;
+      options?: { value: string; label: string }[];
+      onClick?: () => void;
+    }[];
+  };
+  'heroSection': {
+    title: string;
+    settings: {
+      id: string;
+      label: string;
+      type: 'text' | 'color' | 'number' | 'select' | 'button';
+      placeholder?: string;
+      options?: { value: string; label: string }[];
+      onClick?: () => void;
+    }[];
+  };
+  'heading': {
+    title: string;
+    settings: {
+      id: string;
+      label: string;
+      type: 'text' | 'color' | 'number' | 'select' | 'button';
+      placeholder?: string;
+      options?: { value: string; label: string }[];
+      onClick?: () => void;
+    }[];
+  };
   // Add other element types here in future
 }
 
@@ -125,6 +158,77 @@ const customSettings: CustomSettingsMap = {
         id: 'addColumn',
         label: 'Add Column',
         type: 'button'
+      }
+    ]
+  },
+  'grid': {
+    title: 'Grid Layout Settings',
+    settings: [
+      {
+        id: 'columnCount',
+        label: 'Columns',
+        type: 'select',
+        options: [
+          { value: '2', label: '2 Columns' },
+          { value: '3', label: '3 Columns' },
+          { value: '4', label: '4 Columns' },
+          { value: '6', label: '6 Columns' }
+        ]
+      },
+      {
+        id: 'addGridCell',
+        label: 'Add Grid Cell',
+        type: 'button'
+      }
+    ]
+  },
+  'heroSection': {
+    title: 'Hero Section Settings',
+    settings: [
+      {
+        id: 'heroHeight',
+        label: 'Section Height',
+        type: 'select',
+        options: [
+          { value: '500px', label: 'Medium (500px)' },
+          { value: '100vh', label: 'Full Screen' },
+          { value: '400px', label: 'Small (400px)' },
+          { value: '600px', label: 'Large (600px)' },
+        ]
+      },
+      {
+        id: 'overlayColor',
+        label: 'Overlay Color',
+        type: 'color',
+        placeholder: 'rgba(0,0,0,0.5)'
+      },
+      {
+        id: 'contentPosition',
+        label: 'Content Position',
+        type: 'select',
+        options: [
+          { value: 'center', label: 'Center' },
+          { value: 'left', label: 'Left' },
+          { value: 'right', label: 'Right' },
+        ]
+      }
+    ]
+  },
+  'heading': {
+    title: 'Heading Settings',
+    settings: [
+      {
+        id: 'variant',
+        label: 'Heading Level',
+        type: 'select',
+        options: [
+          { value: 'h1', label: 'H1 - Main Heading' },
+          { value: 'h2', label: 'H2 - Section Heading' },
+          { value: 'h3', label: 'H3 - Subsection Heading' },
+          { value: 'h4', label: 'H4 - Minor Heading' },
+          { value: 'h5', label: 'H5 - Small Heading' },
+          { value: 'h6', label: 'H6 - Tiny Heading' },
+        ]
       }
     ]
   }
@@ -266,6 +370,63 @@ const SettingsTab = () => {
         });
       }
 
+      // Inside handleChangeCustomValues, update the logic for grid columnCount
+      if (selectedElement.type === 'grid' && settingProperty === 'columnCount') {
+        const newColumnCount = parseInt(value, 10);
+        const currentCells = Array.isArray(selectedElement.content) ? selectedElement.content : [];
+        const currentColumnCount = currentCells.length;
+        
+        if (newColumnCount > currentColumnCount) {
+          // Add more cells
+          const newCells = [...currentCells];
+          for (let i = currentColumnCount; i < newColumnCount; i++) {
+            newCells.push({
+              content: [],
+              id: v4(),
+              name: 'Container',
+              styles: { 
+                ...defaultStyles, 
+                padding: '8px',
+              },
+              type: 'container',
+            });
+          }
+          
+          dispatch({
+            type: 'UPDATE_ELEMENT',
+            payload: {
+              elementDetails: {
+                ...selectedElement,
+                content: newCells,
+                styles: {
+                  ...selectedElement.styles,
+                  gridTemplateColumns: `repeat(${newColumnCount}, 1fr)`
+                }
+              }
+            }
+          });
+        } else if (newColumnCount < currentColumnCount) {
+          // Remove cells
+          const cellsToKeep = currentCells.slice(0, newColumnCount);
+          
+          dispatch({
+            type: 'UPDATE_ELEMENT',
+            payload: {
+              elementDetails: {
+                ...selectedElement,
+                content: cellsToKeep,
+                styles: {
+                  ...selectedElement.styles,
+                  gridTemplateColumns: `repeat(${newColumnCount}, 1fr)`
+                }
+              }
+            }
+          });
+        }
+        
+        return; // Skip the regular update flow
+      }
+
       console.log('Updated property successfully');
     } catch (error) {
       console.error('Error updating property:', error);
@@ -367,6 +528,46 @@ const SettingsTab = () => {
     );
   };
 
+  // Add a handler for adding grid cells
+  const handleAddGridCell = () => {
+    if (selectedElement && selectedElement.type === 'grid') {
+      // Create a new grid cell
+      const newCell = {
+        content: [],
+        id: v4(),
+        name: 'Container',
+        styles: { 
+          ...defaultStyles, 
+          padding: '8px',
+        },
+        type: 'container',
+      };
+      
+      // Get the current content
+      const currentCells = Array.isArray(selectedElement.content) ? selectedElement.content : [];
+      
+      // Get the new column count
+      const newColumnCount = currentCells.length + 1;
+      
+      // Update the element
+      dispatch({
+        type: 'UPDATE_ELEMENT',
+        payload: {
+          elementDetails: {
+            ...selectedElement,
+            content: [...currentCells, newCell] as EditorElement[],
+            styles: {
+              ...selectedElement.styles,
+              gridTemplateColumns: `repeat(${newColumnCount}, 1fr)`
+            }
+          }
+        }
+      });
+      
+      console.log('Added new cell to Grid Layout');
+    }
+  };
+
   return (
     <div className="p-4 overflow-auto max-w-md mx-auto">
       <h3 className="text-lg font-medium mb-4">Settings</h3>
@@ -374,7 +575,7 @@ const SettingsTab = () => {
       <Accordion
         type="multiple"
         className="w-full"
-        defaultValue={['CustomSettings', 'Typography', 'Dimensions', 'Decorations', 'Flexbox']}
+        defaultValue={['CustomSettings', 'Typography', 'Dimensions', 'Decorations', 'Flexbox', 'Grid']}
       >
         {/* Custom Settings Section - Only show for supported elements */}
         {selectedElement?.type && selectedElement.type in customSettings && (
@@ -416,7 +617,11 @@ const SettingsTab = () => {
                   {setting.type === 'button' && (
                     <button
                       id={setting.id}
-                      onClick={selectedElement.type === '2Col' ? handleAddColumn : undefined}
+                      onClick={
+                        selectedElement.type === '2Col' ? handleAddColumn :
+                        selectedElement.type === 'grid' && setting.id === 'addGridCell' ? handleAddGridCell :
+                        undefined
+                      }
                       className="bg-primary text-white p-2 rounded-md hover:bg-primary/90 transition-colors"
                     >
                       {setting.label}
@@ -1199,6 +1404,346 @@ const SettingsTab = () => {
                   <option value="%">%</option>
                 </select>
               </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+        
+        {/* Add this new Grid accordion section right after the Flexbox accordion section */}
+        <AccordionItem value="Grid">
+          <AccordionTrigger className="no-underline">
+            Grid
+          </AccordionTrigger>
+          <AccordionContent className="flex flex-col gap-4">
+            {/* Grid Template Columns */}
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground">Grid Template Columns</p>
+              <select
+                id="gridTemplateColumns"
+                onChange={handleChangeCustomValues}
+                value={state.editor.selectedElement.styles?.gridTemplateColumns as string || ''}
+                className="border p-2 rounded-md"
+              >
+                <option value="">None</option>
+                <option value="1fr">1 Column</option>
+                <option value="repeat(2, 1fr)">2 Columns (Equal)</option>
+                <option value="repeat(3, 1fr)">3 Columns (Equal)</option>
+                <option value="repeat(4, 1fr)">4 Columns (Equal)</option>
+              </select>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+                  <input
+                    id="gridTemplateColumns"
+                    onChange={handleChangeCustomValues}
+                    value={state.editor.selectedElement.styles?.gridTemplateColumns as string || ''}
+                    className="flex-1 p-2 border-0 focus:ring-0"
+                    placeholder="repeat(2, 1fr)"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground italic mt-1">
+                Examples: 1fr 2fr repeat(3, 1fr) auto 1fr 1fr
+              </p>
+            </div>
+            
+            {/* Grid Template Rows */}
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground">Grid Template Rows</p>
+              <select
+                id="gridTemplateRows"
+                onChange={handleChangeCustomValues}
+                value={state.editor.selectedElement.styles?.gridTemplateRows as string || ''}
+                className="border p-2 rounded-md"
+              >
+                <option value="">Auto</option>
+                <option value="repeat(2, auto)">2 Rows (Auto)</option>
+                <option value="repeat(3, auto)">3 Rows (Auto)</option>
+                <option value="repeat(2, 1fr)">2 Rows (Equal)</option>
+                <option value="repeat(3, 1fr)">3 Rows (Equal)</option>
+              </select>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+                  <input
+                    id="gridTemplateRows"
+                    onChange={handleChangeCustomValues}
+                    value={state.editor.selectedElement.styles?.gridTemplateRows as string || ''}
+                    className="flex-1 p-2 border-0 focus:ring-0"
+                    placeholder="auto"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground italic mt-1">
+                Examples: auto 1fr 2fr repeat(2, minmax(100px, auto))
+              </p>
+            </div>
+            
+            {/* Grid Gap */}
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground">Grid Gap</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+                  <input
+                    id="gap"
+                    onChange={handleChangeCustomValues}
+                    value={state.editor.selectedElement.styles?.gap as string || ''}
+                    className="flex-1 p-2 border-0 focus:ring-0"
+                    placeholder="0px"
+                  />
+                  <div className="flex items-center border-l h-full">
+                    <button
+                      type="button"
+                      className="px-2 py-2 hover:bg-gray-100"
+                      onClick={() => {
+                        const currentValue = state.editor.selectedElement.styles?.gap as string || '0px';
+                        const numValue = parseFloat(currentValue) || 0;
+                        const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
+                        const step = unit === 'px' ? 1 : 0.1;
+                        handleChangeCustomValues({
+                          target: {
+                            id: 'gap',
+                            value: `${Math.max(0, numValue - step)}${unit}`,
+                          },
+                        });
+                      }}
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className="px-2 py-2 hover:bg-gray-100"
+                      onClick={() => {
+                        const currentValue = state.editor.selectedElement.styles?.gap as string || '0px';
+                        const numValue = parseFloat(currentValue) || 0;
+                        const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
+                        const step = unit === 'px' ? 1 : 0.1;
+                        handleChangeCustomValues({
+                          target: {
+                            id: 'gap',
+                            value: `${numValue + step}${unit}`,
+                          },
+                        });
+                      }}
+                    >
+                      <Plus size={14} />
+                    </button>
+                  </div>
+                </div>
+                <select
+                  className="border p-2 rounded-md w-20"
+                  value={(state.editor.selectedElement.styles?.gap as string || '0px').replace(/[\d.-]/g, '') || 'px'}
+                  onChange={(e) => {
+                    const currentValue = state.editor.selectedElement.styles?.gap as string || '0px';
+                    const numValue = parseFloat(currentValue) || 0;
+                    handleChangeCustomValues({
+                      target: {
+                        id: 'gap',
+                        value: `${numValue}${e.target.value}`,
+                      },
+                    });
+                  }}
+                >
+                  <option value="px">px</option>
+                  <option value="rem">rem</option>
+                  <option value="em">em</option>
+                  <option value="%">%</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Grid Column Gap and Row Gap */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Column Gap */}
+              <div className="flex flex-col gap-2">
+                <p className="text-muted-foreground">Column Gap</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+                    <input
+                      id="columnGap"
+                      onChange={handleChangeCustomValues}
+                      value={state.editor.selectedElement.styles?.columnGap as string || ''}
+                      className="flex-1 p-2 border-0 focus:ring-0"
+                      placeholder="0px"
+                    />
+                    <div className="flex items-center border-l h-full">
+                      <button
+                        type="button"
+                        className="px-2 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          const currentValue = state.editor.selectedElement.styles?.columnGap as string || '0px';
+                          const numValue = parseFloat(currentValue) || 0;
+                          const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
+                          const step = unit === 'px' ? 1 : 0.1;
+                          handleChangeCustomValues({
+                            target: {
+                              id: 'columnGap',
+                              value: `${Math.max(0, numValue - step)}${unit}`,
+                            },
+                          });
+                        }}
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="px-2 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          const currentValue = state.editor.selectedElement.styles?.columnGap as string || '0px';
+                          const numValue = parseFloat(currentValue) || 0;
+                          const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
+                          const step = unit === 'px' ? 1 : 0.1;
+                          handleChangeCustomValues({
+                            target: {
+                              id: 'columnGap',
+                              value: `${numValue + step}${unit}`,
+                            },
+                          });
+                        }}
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Row Gap */}
+              <div className="flex flex-col gap-2">
+                <p className="text-muted-foreground">Row Gap</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center border rounded-md overflow-hidden">
+                    <input
+                      id="rowGap"
+                      onChange={handleChangeCustomValues}
+                      value={state.editor.selectedElement.styles?.rowGap as string || ''}
+                      className="flex-1 p-2 border-0 focus:ring-0"
+                      placeholder="0px"
+                    />
+                    <div className="flex items-center border-l h-full">
+                      <button
+                        type="button"
+                        className="px-2 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          const currentValue = state.editor.selectedElement.styles?.rowGap as string || '0px';
+                          const numValue = parseFloat(currentValue) || 0;
+                          const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
+                          const step = unit === 'px' ? 1 : 0.1;
+                          handleChangeCustomValues({
+                            target: {
+                              id: 'rowGap',
+                              value: `${Math.max(0, numValue - step)}${unit}`,
+                            },
+                          });
+                        }}
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="px-2 py-2 hover:bg-gray-100"
+                        onClick={() => {
+                          const currentValue = state.editor.selectedElement.styles?.rowGap as string || '0px';
+                          const numValue = parseFloat(currentValue) || 0;
+                          const unit = currentValue.replace(/[\d.-]/g, '') || 'px';
+                          const step = unit === 'px' ? 1 : 0.1;
+                          handleChangeCustomValues({
+                            target: {
+                              id: 'rowGap',
+                              value: `${numValue + step}${unit}`,
+                            },
+                          });
+                        }}
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Grid Auto Flow */}
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground">Grid Auto Flow</p>
+              <select
+                id="gridAutoFlow"
+                onChange={handleChangeCustomValues}
+                value={state.editor.selectedElement.styles?.gridAutoFlow as string || ''}
+                className="border p-2 rounded-md"
+              >
+                <option value="row">Row</option>
+                <option value="column">Column</option>
+                <option value="row dense">Row Dense</option>
+                <option value="column dense">Column Dense</option>
+              </select>
+            </div>
+            
+            {/* Justify Items */}
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground">Justify Items</p>
+              <select
+                id="justifyItems"
+                onChange={handleChangeCustomValues}
+                value={state.editor.selectedElement.styles?.justifyItems as string || ''}
+                className="border p-2 rounded-md"
+              >
+                <option value="start">Start</option>
+                <option value="end">End</option>
+                <option value="center">Center</option>
+                <option value="stretch">Stretch</option>
+              </select>
+            </div>
+            
+            {/* Align Items (for Grid) */}
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground">Align Items</p>
+              <select
+                id="alignItems"
+                onChange={handleChangeCustomValues}
+                value={state.editor.selectedElement.styles?.alignItems as string || ''}
+                className="border p-2 rounded-md"
+              >
+                <option value="start">Start</option>
+                <option value="end">End</option>
+                <option value="center">Center</option>
+                <option value="stretch">Stretch</option>
+              </select>
+            </div>
+            
+            {/* Justify Content (for Grid) */}
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground">Justify Content</p>
+              <select
+                id="justifyContent"
+                onChange={handleChangeCustomValues}
+                value={state.editor.selectedElement.styles?.justifyContent as string || ''}
+                className="border p-2 rounded-md"
+              >
+                <option value="start">Start</option>
+                <option value="end">End</option>
+                <option value="center">Center</option>
+                <option value="stretch">Stretch</option>
+                <option value="space-around">Space Around</option>
+                <option value="space-between">Space Between</option>
+                <option value="space-evenly">Space Evenly</option>
+              </select>
+            </div>
+            
+            {/* Align Content (for Grid) */}
+            <div className="flex flex-col gap-2">
+              <p className="text-muted-foreground">Align Content</p>
+              <select
+                id="alignContent"
+                onChange={handleChangeCustomValues}
+                value={state.editor.selectedElement.styles?.alignContent as string || ''}
+                className="border p-2 rounded-md"
+              >
+                <option value="start">Start</option>
+                <option value="end">End</option>
+                <option value="center">Center</option>
+                <option value="stretch">Stretch</option>
+                <option value="space-around">Space Around</option>
+                <option value="space-between">Space Between</option>
+                <option value="space-evenly">Space Evenly</option>
+              </select>
             </div>
           </AccordionContent>
         </AccordionItem>

@@ -12,6 +12,9 @@ import SpacerComponent from '../SpacerComponent'
 import BadgeComponent from '../BadgeComponent'
 import ProductCardComponent from '../Compound/Components/ProductCardComponent'
 import TwoColComponent from './TwoColComponent'
+import GridComponent from '../Compound/Components/GridComponent'
+import HeroSectionComponent from './HeroSectionComponent'
+import HeadingComponent from './HeadingComponent'
 
 type Props = {
   element: EditorElement
@@ -44,12 +47,14 @@ const Recursive = ({ element }: Props) => {
       />
     case 'productCard':
       return <ProductCardComponent element={element} />
-
-
-
     case 'badge':
       return <BadgeComponent element={element} />
-    
+    case 'grid':
+      return <GridComponent element={element} />
+    case 'heading':
+      return <HeadingComponent element={element} />
+    case 'heroSection':
+      return <HeroSectionComponent element={element} />
     default:
       return null
   }

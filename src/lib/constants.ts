@@ -19,4 +19,6 @@ export type EditorBtns =
   | 'icon'
   | 'productCard'
   | 'multiColumn'
-  
+  | 'grid'
+  | 'heroSection'
+  | 'heading'

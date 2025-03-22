@@ -324,84 +324,94 @@ export const useEditor = () => {
  * @param elements - Array of editor elements to process
  * @param dispatch - Function to dispatch updates
  */
-const ResponsivnessHandle = (
-  device: DeviceTypes, 
-  elements: EditorElement[], 
-  dispatch: React.Dispatch<EditorAction>
-) => {
-  console.log("hello");
+const ResponsivnessHandle = (device: DeviceTypes, state: EditorState): EditorState => {
+ 
   console.log(`ResponsivnessHandle: Device changed to ${device}`);
   
-  // Store all elements that need updates
-  const elementsToUpdate: EditorElement[] = [];
+  // Clone the state to avoid direct mutation
+  const newState = JSON.parse(JSON.stringify(state))
   
-  // Process all elements recursively and collect updates
-  const processElementsRecursively = (elements: EditorElement[]) => {
+  // Process the elements for device-specific adjustments
+  const processElements = (elements: EditorElement[]) => {
+    if (!elements) return
+    
     elements.forEach(element => {
-      let needsUpdate = false;
-      const updatedStyles = { ...element.styles } as React.CSSProperties;
-      
-      // Handle __body element - adjust font size for mobile
-      if (element.id === '__body') {
+      // Handle specific component types
+      if (element.type === 'heroSection') {
+        // Adjust hero section for mobile
         if (device === 'Mobile') {
-          updatedStyles.fontSize = '14px'; // smaller font for mobile
-          needsUpdate = true;
-          console.log(`Adjusting __body font size for mobile`);
+          element.styles = {
+            ...element.styles,
+            minHeight: '400px',
+            alignItems: 'center',
+            textAlign: 'center',
+          }
         } else {
-          // Reset to normal font size for other devices
-          updatedStyles.fontSize = '16px'; 
-          needsUpdate = true;
-          console.log(`Resetting __body font size for ${device}`);
+          // Reset to default or preserve original styles for larger screens
+          // Only modify if there are explicit mobile overrides
+          const { alignItems, textAlign } = element.styles
+          if (alignItems === 'center' && textAlign === 'center') {
+            // These were likely mobile overrides, so restore original if available
+            const originalAlignItems = element._originalStyles?.alignItems
+            const originalTextAlign = element._originalStyles?.textAlign
+            
+            if (originalAlignItems || originalTextAlign) {
+              element.styles = {
+                ...element.styles,
+                alignItems: originalAlignItems || element.styles.alignItems,
+                textAlign: originalTextAlign || element.styles.textAlign,
+              }
+            }
+          }
         }
       }
       
-      // Handle 2Col components
-      if (element.type === '2Col') {
-        // Update flexDirection based on device
-        updatedStyles.flexDirection = device === 'Mobile' ? 'column' : 'row';
-        needsUpdate = true;
-        console.log(`Found 2Col component ${element.id}, updating flexDirection to ${updatedStyles.flexDirection}`);
+      // Handle heading responsiveness
+      if (element.type === 'heading') {
+        if (device === 'Mobile') {
+          // Store original font size if not already stored
+          if (!element._originalStyles) {
+            element._originalStyles = { fontSize: element.styles.fontSize }
+          }
+          
+          // Adjust font size for mobile
+          const currentSize = element.styles.fontSize as string || '2rem'
+          // Extract numeric value and unit
+          const match = currentSize.match(/^([\d.]+)([a-z%]*)$/)
+          
+          if (match) {
+            const [_, value, unit] = match
+            const numericValue = parseFloat(value)
+            // Reduce size for mobile
+            element.styles.fontSize = `${numericValue * 0.8}${unit}`
+          }
+          
+          // Center text on mobile for better readability
+          element.styles.textAlign = 'center'
+        } else if (element._originalStyles) {
+          // Restore original font size for larger screens
+          element.styles.fontSize = element._originalStyles.fontSize
+          
+          // Only reset text alignment if explicitly set for mobile
+          if (element.styles.textAlign === 'center' && element._originalStyles.textAlign) {
+            element.styles.textAlign = element._originalStyles.textAlign
+          }
+        }
       }
       
-      // In responsiveness handler for multiColumn
-      if (element.type === 'multiColumn') {
-        // Update flexDirection based on device
-        updatedStyles.flexDirection = device === 'Mobile' ? 'column' : 'row';
-        needsUpdate = true;
-        console.log(`Found MultiColumn component ${element.id}, updating flexDirection to ${updatedStyles.flexDirection}`);
-      }
-      
-      // If this element needs an update, add it to our collection
-      if (needsUpdate) {
-        elementsToUpdate.push({
-          ...element,
-          styles: updatedStyles
-        });
-      }
-      
-      // Continue recursion for container elements
+      // Process children recursively
       if (Array.isArray(element.content)) {
-        processElementsRecursively(element.content);
+        processElements(element.content as EditorElement[])
       }
-    });
-  };
-  
-  // Start the recursive processing to collect all elements that need updates
-  processElementsRecursively(elements);
-  
-  // If we have elements to update, dispatch a single action with all updates
-  if (elementsToUpdate.length > 0) {
-    console.log(`Applying responsive styles for ${elementsToUpdate.length} elements with a single history entry`);
-    
-    // Dispatch a single action with all elements to update
-    dispatch({
-      type: 'APPLY_DEVICE_STYLES',
-      payload: {
-        device,
-        updatedElements: elementsToUpdate
-      }
-    });
+    })
   }
+  
+  // Process the elements from the root
+  if (Array.isArray(newState.editor.elements)) {
+    processElements(newState.editor.elements)
+  }
+  
+  return newState
 }
 
 const editorReducer = (state: EditorState = initialState, action: EditorAction) => {
@@ -661,7 +671,7 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
       // Using setTimeout to ensure state updates complete first
       const elements = state.editor.elements;
       setTimeout(() => {
-        ResponsivnessHandle(newDevice, elements, dispatch);
+        ResponsivnessHandle(newDevice, changedDeviceState);
       }, 0);
       
       return changedDeviceState;

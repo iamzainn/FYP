@@ -3,7 +3,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { EditorBtns } from "@/lib/constants"
 import React from "react"
-import { TypeIcon, Youtube } from "lucide-react"
+import { TypeIcon, Youtube, LayoutTemplate, Type } from "lucide-react"
 import { LinkPlaceholder } from "./LinkPlaceholder"
 import TwoColumnsPlaceholder from "./BUILDER/TwoColPlaceHolder"
 import ContactFormComponentPlaceholder from "./ContactFormComponentPlaceholder"
@@ -14,6 +14,7 @@ import SpacerPlaceholder from "./BUILDER/SpacerPlaceholder"
 import BadgePlaceholder from "./BadgePlaceholder"
 import IconPlaceholder from "./BUILDER/IconPlaceholder"
 import ProductCardPlaceholder from "./Compound/ProductCardPlaceholder"
+import GridPlaceholder from "./BUILDER/GridPlaceholder"
 
 
 
@@ -77,6 +78,44 @@ const VideoPlaceholder = () => {
   )
 }
 
+const HeadingPlaceholder = () => {
+  const handleDragStart = (e: React.DragEvent, type: string) => {
+    e.dataTransfer.setData('componentType', type)
+  }
+  
+  return (
+    <div
+      draggable
+      onDragStart={(e) => handleDragStart(e, 'heading')}
+      className="h-14 w-full border-[1px] border-dashed rounded-lg flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-grab"
+    >
+      <div className="flex flex-col items-center gap-1">
+        <Type className="h-6 w-6 text-slate-500" />
+        <p className="text-xs">Heading</p>
+      </div>
+    </div>
+  )
+}
+
+const HeroSectionPlaceholder = () => {
+  const handleDragStart = (e: React.DragEvent, type: string) => {
+    e.dataTransfer.setData('componentType', type)
+  }
+  
+  return (
+    <div
+      draggable
+      onDragStart={(e) => handleDragStart(e, 'heroSection')}
+      className="h-14 w-full border-[1px] border-dashed rounded-lg flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-grab"
+    >
+      <div className="flex flex-col items-center gap-1">
+        <LayoutTemplate className="h-6 w-6 text-slate-500" />
+        <p className="text-xs">Hero Section</p>
+      </div>
+    </div>
+  )
+}
+
 const ComponentsTab = () => {
   const elements: {
     Component: React.ReactNode
@@ -108,6 +147,12 @@ const ComponentsTab = () => {
       label: 'Video',
       id: 'video',
       group: 'elements',
+    },
+    {
+      Component: <HeroSectionPlaceholder />,
+      label: 'Hero Section',
+      id: 'heroSection',
+      group: 'layout',
     },
     {
       Component: <LinkPlaceholder />,
@@ -175,6 +220,18 @@ const ComponentsTab = () => {
   group: 'elements',
 },
     
+    {
+      Component: <GridPlaceholder />,
+      label: 'Grid Layout',
+      id: 'grid',
+      group: 'layout',
+    },
+    {
+      Component: <HeadingPlaceholder />,
+      label: 'Heading',
+      id: 'heading',
+      group: 'elements',
+    },
   ]
 
   return (

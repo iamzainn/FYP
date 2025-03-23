@@ -70,7 +70,7 @@ const Container = ({ element }: ContainerProps) => {
   return (
     <div
       style={styles}
-      className={clsx('relative p-4 transition-all group', {
+      className={clsx('relative transition-all group', {
         'max-w-full w-full': type === 'container' || type === '2Col',
         'h-fit': type === 'container',
         'h-full': type === '__body',

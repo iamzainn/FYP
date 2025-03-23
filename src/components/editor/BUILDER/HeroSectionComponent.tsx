@@ -13,7 +13,7 @@ interface HeroSectionProps {
 }
 
 const HeroSectionComponent = ({ element }: HeroSectionProps) => {
-  const { id, content, styles, type } = element
+  const { id, content, styles, customSettings, type } = element
   const { dispatch, state } = useEditor()
 
   const handleOnClickBody = (e: React.MouseEvent) => {
@@ -63,33 +63,23 @@ const HeroSectionComponent = ({ element }: HeroSectionProps) => {
     })
   }
 
-  // Combine passed styles with hero-specific defaults
-  const heroStyles: React.CSSProperties = {
-    minHeight: state.editor.device === 'Mobile' ? '400px' : '500px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: state.editor.device === 'Mobile' ? 'center' : (styles.alignItems || 'center'),
-    position: 'relative',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    ...styles,
-  }
+  // Get overlay color from customSettings
+  const overlayColor = customSettings?.overlayColor as string || 'rgba(0,0,0,0.5)'
 
-  // For the overlay effect without using ::before
+  // For the overlay effect
   const overlayStyles: React.CSSProperties = {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: overlayColor as string,
     zIndex: 1,
   }
 
   return (
     <div
-      style={heroStyles}
+      style={styles}
       className={clsx('relative w-full', {
         'border-blue-500 border-[1px]': 
           state.editor.selectedElement.id === id && 
@@ -106,8 +96,8 @@ const HeroSectionComponent = ({ element }: HeroSectionProps) => {
       onClick={handleOnClickBody}
       onDragStart={(e) => handleDragStart(e, type || 'heroSection')}
     >
-      
-        <div style={overlayStyles} />
+      {/* Overlay div */}
+      <div style={overlayStyles} />
 
       {state.editor.selectedElement.id === element.id &&
         !state.editor.liveMode && (
@@ -117,7 +107,7 @@ const HeroSectionComponent = ({ element }: HeroSectionProps) => {
         )}
 
       {/* Hero content container */}
-      <div className="relative z-10 w-full max-w-screen-xl mx-auto flex flex-col items-center px-4">
+      <div className="relative z-10 w-full max-w-screen-xl mx-auto flex flex-col items-center">
         {Array.isArray(content) &&
           content.map((childElement) => (
             <Recursive key={childElement.id} element={childElement} />

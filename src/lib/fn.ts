@@ -4,6 +4,7 @@ import { EditorBtns } from "./constants"
 
 import { useEditor } from "@/providers/editor/editor-provider"
 import { EditorElement } from "@/providers/editor/editor-provider"
+import { ComponentConfigs } from './ComponentConfiguration'
 
 export const useDropHandler = () => {
     const {dispatch,} = useEditor()
@@ -560,71 +561,29 @@ export const useDropHandler = () => {
         },
       });
   break;
-            case 'heroSection':
-              // Create heading for the hero section
-              const headingElement = {
-                content: 'Your Compelling Headline',
-                id: crypto.randomUUID(),
-                name: 'Heading',
-                styles: {
-                  color: '#ffffff',
-                  fontSize: '3rem',
-                  fontWeight: 'bold',
-                
-                  textAlign: 'center',
-                  margin: '0 0 2rem 0',
-                  zIndex: 10,
-                },
-                type: 'heading',
-                
-              };
+            case 'heading':
+              // Use the heading configuration to create the element
+              const headingElement = ComponentConfigs['heading'].create()
               
-              // Create a button element
-              const buttonElement = {
-                content: 'Get Started',
-                id: crypto.randomUUID(),
-                name: 'Button',
-                styles: {
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '0.375rem',
-                  fontWeight: 'medium',
-                  cursor: 'pointer',
-                  display: 'inline-block',
-                  textAlign: 'center',
-                  zIndex: 10,
-                },
-                type: 'button',
-              };
-
-              // Create the hero container with these elements
               dispatch({
                 type: 'ADD_ELEMENT',
                 payload: {
                   containerId: id,
-                  elementDetails: {
-                    content: [headingElement, buttonElement] as EditorElement[],
-                    id: crypto.randomUUID(),
-                    name: 'Hero Section',
-                    styles: {
-                      backgroundImage: 'url("https://images.unsplash.com/photo-1604537529428-15bcbeecfe4d?q=80&w=2069")',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      minHeight: '500px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      position: 'relative',
-                      color: 'white',
-                      textAlign: 'center',
-                    
-                    },
-                    type: 'heroSection',
-                  },
+                  elementDetails: headingElement as EditorElement,
                 },
-              });
+              })
+              break;
+            case 'heroSection':
+              // Use the hero section configuration to create the element
+              const heroElement = ComponentConfigs['heroSection'].create(id)
+              
+              dispatch({
+                type: 'ADD_ELEMENT',
+                payload: {
+                  containerId: id,
+                  elementDetails: heroElement as EditorElement,
+                },
+              })
               break;
         default:
               break;

@@ -1,10 +1,12 @@
 import React from 'react'
 import { EditorElement } from '@/providers/editor/editor-provider'
 import { SelectInput, TextInput } from './SettingsInput'
+import { getResponsiveValue } from './styleUtils'
 
 interface TypographySettingsProps {
   element: EditorElement;
   onStyleChange: (property: string, value: string | number) => void;
+  currentDevice: 'Desktop' | 'Tablet' | 'Mobile';
 }
 
 // Font family options
@@ -51,22 +53,23 @@ const fontSizeUnitOptions = [
 
 export const TypographySettings: React.FC<TypographySettingsProps> = ({
   element,
-  onStyleChange
+  onStyleChange,
+  currentDevice
 }) => {
-  // Extract current values from styles
-  const fontFamily = element.styles.fontFamily as string || "";
-  const fontWeight = element.styles.fontWeight as string || "";
-  const fontSize = element.styles.fontSize as string || "";
-  const textAlign = element.styles.textAlign as string || "";
-  const color = element.styles.color as string || "";
-  const lineHeight = element.styles.lineHeight as string || "";
-  const letterSpacing = element.styles.letterSpacing as string || "";
+  // Extract current values from styles with device-specific overrides
+  const fontFamily = getResponsiveValue(element, "fontFamily", currentDevice) as string || "";
+  const fontWeight = getResponsiveValue(element, "fontWeight", currentDevice) as string || "";
+  const fontSize = getResponsiveValue(element, "fontSize", currentDevice) as string || "";
+  const textAlign = getResponsiveValue(element, "textAlign", currentDevice) as string || "";
+  const color = getResponsiveValue(element, "color", currentDevice) as string || "";
+  const lineHeight = getResponsiveValue(element, "lineHeight", currentDevice) as string || "";
+  const letterSpacing = getResponsiveValue(element, "letterSpacing", currentDevice) as string || "";
   
   // Parse font size to create proper input
   const parseFontSize = () => {
     if (!fontSize) return { value: "", unit: "px" };
     
-    const match = fontSize.match(/^([\d.]+)([a-z%]*)$/);
+    const match = fontSize.toString().match(/^([\d.]+)([a-z%]*)$/);
     if (match) {
       const [, value, unit] = match;
       return { value, unit: unit || "px" };

@@ -28,7 +28,8 @@ export type EditorElement = {
     borderBottomRadius?: string,
     borderLeftRadius?: string,
     columnCount?: number,
-    columnGap?: string
+    columnGap?: string,
+    target?: string,
   }
   customSettings?: {
     [key: string]: unknown
@@ -656,7 +657,6 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
     
     case 'CHANGE_DEVICE': {
       const newDevice = action.payload.device;
-      // const dispatch = action.payload.dispatch;
       
       // Create updated state first
       const changedDeviceState = {
@@ -667,15 +667,22 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
         },
       };
       
-      // Call the ResponsivnessHandle function directly with the required parameters
-      // We need to do this before returning so we have access to dispatch
-      // Using setTimeout to ensure state updates complete first
-      // const elements = state.editor.elements;
-      // setTimeout(() => {
-      //   ResponsivnessHandle(newDevice, changedDeviceState);
-      // }, 0);
+      // Add this state to history to ensure Settings gets new state
+      const updatedHistory = [
+        ...state.history.history.slice(0, state.history.currentIndex + 1),
+        // Store a deep copy in history
+        JSON.parse(JSON.stringify(changedDeviceState.editor)),
+      ];
       
-      return changedDeviceState;
+      // Return new state with updated history
+      return {
+        ...changedDeviceState,
+        history: {
+          ...state.history,
+          history: updatedHistory,
+          currentIndex: updatedHistory.length - 1,
+        }
+      };
     }
     
     case 'CHANGE_CLICKED_ELEMENT': {

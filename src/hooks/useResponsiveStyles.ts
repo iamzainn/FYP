@@ -1,70 +1,60 @@
 import { useEffect, useMemo, useState } from 'react'
-import { DeviceTypes, EditorElement } from '@/providers/editor/editor-provider'
+import {  EditorElement, EditorState } from '@/providers/editor/editor-provider'
 
 // Define breakpoints that match your device types
-const BREAKPOINTS = {
-  mobile: 420,
-  tablet: 820,
-}
 
 /**
  * Hook to compute final styles based on current device and responsive settings
  */
-export function useResponsiveStyles(
-  element: EditorElement, 
-  currentDevice: DeviceTypes,
-  isLiveOrPreview: boolean
-) {
+export function useResponsiveStyles(element: EditorElement, state: EditorState) {
+  const { styles, responsiveSettings } = element
+  const { device, liveMode, previewMode } = state.editor
+  
   // Track window width for live/preview mode
-  const [windowWidth, setWindowWidth] = useState<number>(
-    typeof window !== 'undefined' ? window.innerWidth : Infinity
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 0
   )
-
-  // Handle window resize in live/preview mode
+  
+  // Set up resize listener for live/preview mode
   useEffect(() => {
-    if (!isLiveOrPreview) return
-
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth)
+    if (liveMode || previewMode) {
+      const handleResize = () => {
+        setWindowWidth(window.innerWidth)
+      }
+      
+      window.addEventListener('resize', handleResize)
+      return () => {
+        window.removeEventListener('resize', handleResize)
+      }
     }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [isLiveOrPreview])
-
-  // Determine actual device based on either selected device or window width
-  const actualDevice = useMemo<DeviceTypes>(() => {
-    if (isLiveOrPreview) {
-      // In live/preview mode, determine device from actual window width
-      if (windowWidth <= BREAKPOINTS.mobile) return 'Mobile'
-      if (windowWidth <= BREAKPOINTS.tablet) return 'Tablet'
+  }, [liveMode, previewMode])
+  
+  // Determine current device type based on mode
+  const currentDevice = useMemo(() => {
+    if (liveMode || previewMode) {
+      // Use actual window width in live/preview mode
+      if (windowWidth <= 420) return 'Mobile'
+      if (windowWidth <= 850) return 'Tablet'
       return 'Desktop'
     }
-    // In editor mode, use the selected device
-    return currentDevice
-  }, [currentDevice, isLiveOrPreview, windowWidth])
-
-  // Merge base styles with responsive overrides for the current device
+    // Use selected device in editor mode
+    return device
+  }, [device, liveMode, previewMode, windowWidth])
+  
+  // Merge base styles with responsive overrides
   const computedStyles = useMemo(() => {
-    const { styles, responsiveSettings } = element
-    
     // Start with base styles
     let mergedStyles = { ...styles }
     
-    // Apply device-specific overrides if they exist
-    if (responsiveSettings) {
-      if (actualDevice === 'Mobile' && responsiveSettings.mobile) {
-        mergedStyles = { ...mergedStyles, ...responsiveSettings.mobile }
-      } else if (actualDevice === 'Tablet' && responsiveSettings.tablet) {
-        mergedStyles = { ...mergedStyles, ...responsiveSettings.tablet }
-      }
+    // Apply device-specific overrides if available
+    if (currentDevice === 'Mobile' && responsiveSettings?.mobile) {
+      mergedStyles = { ...mergedStyles, ...responsiveSettings.mobile }
+    } else if (currentDevice === 'Tablet' && responsiveSettings?.tablet) {
+      mergedStyles = { ...mergedStyles, ...responsiveSettings.tablet }
     }
     
     return mergedStyles
-  }, [element.styles, element.responsiveSettings, actualDevice])
-
-  return {
-    computedStyles,
-    currentDevice: actualDevice
-  }
+  }, [styles, responsiveSettings, currentDevice])
+  
+  return { computedStyles, currentDevice }
 } 

@@ -16,14 +16,16 @@ import { DimensionsSettings } from './SETTINGS/DimenstionSettings'
 import { DecorationsSettings } from './SETTINGS/DecorationSettings'
 import { CustomSettings } from './SETTINGS/CustomSettings'
 import { Trash } from "lucide-react"
-import {  useState } from "react"
+import { useState } from "react"
 
 const SettingsTab = () => {
-  const { state, dispatch,  } = useEditor()
+  const { state, dispatch } = useEditor()
   const [activeSection, setActiveSection] = useState<string[]>(['typography', 'decorations', 'dimensions', 'custom'])
   const selectedElement = state.editor.selectedElement
-  console.log("selectedElement : ",selectedElement)
+  const currentDevice = state.editor.device
   
+  console.log("selectedElement:", selectedElement)
+  console.log("Current device:", currentDevice)
 
   if (!selectedElement.id) {
     return (
@@ -35,19 +37,42 @@ const SettingsTab = () => {
     )
   }
 
+  // Get the appropriate style handler based on the current device
   const handleStyleChange = (property: string, value: string | number) => {
-    dispatch({
-      type: 'UPDATE_ELEMENT',
-      payload: {
-        elementDetails: {
-          ...selectedElement,
-          styles: {
-            ...selectedElement.styles,
-            [property]: value,
+    if (currentDevice === 'Desktop') {
+      // Update the base styles
+      dispatch({
+        type: 'UPDATE_ELEMENT',
+        payload: {
+          elementDetails: {
+            ...selectedElement,
+            styles: {
+              ...selectedElement.styles,
+              [property]: value,
+            },
           },
         },
-      },
-    })
+      })
+    } else {
+      // Update device-specific styles (Mobile or Tablet)
+      const deviceKey = currentDevice === 'Mobile' ? 'mobile' : 'tablet'
+      
+      dispatch({
+        type: 'UPDATE_ELEMENT',
+        payload: {
+          elementDetails: {
+            ...selectedElement,
+            responsiveSettings: {
+              ...(selectedElement?.responsiveSettings || {}),
+              [deviceKey]: {
+                ...(selectedElement?.responsiveSettings?.[deviceKey] || {}),
+                [property]: value,
+              }
+            },
+          },
+        },
+      })
+    }
   }
 
   const handleChangeCustomValues = (property: string, value: string | number) => {
@@ -80,6 +105,11 @@ const SettingsTab = () => {
         <div>
           <p className="text-sm font-medium">
             {selectedElement.name || selectedElement.type}
+            {currentDevice !== 'Desktop' && 
+              <span className="ml-2 text-xs text-blue-500 font-normal">
+                {currentDevice} View
+              </span>
+            }
           </p>
           <p className="text-xs text-muted-foreground">{selectedElement.id}</p>
         </div>
@@ -96,74 +126,77 @@ const SettingsTab = () => {
       </div>
 
       <div className="flex-1 overflow-auto px-2 py-2">
-        <Accordion
-          type="multiple"
-          defaultValue={activeSection}
-          onValueChange={setActiveSection}
-          className="w-full"
-        >
-          <AccordionItem value="typography" className="border-b">
+      <Accordion
+        type="multiple"
+        defaultValue={activeSection}
+        onValueChange={setActiveSection}
+        className="w-full"
+      >
+        <AccordionItem value="typography" className="border-b">
+          <AccordionTrigger className="py-2 text-sm hover:no-underline">
+            Typography
+          </AccordionTrigger>
+          <AccordionContent className="pb-2">
+            <TypographySettings 
+              element={selectedElement} 
+              onStyleChange={handleStyleChange}
+              currentDevice={currentDevice}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="dimensions" className="border-b">
+          <AccordionTrigger className="py-2 text-sm hover:no-underline">
+            Dimensions
+          </AccordionTrigger>
+          <AccordionContent className="pb-2">
+            <DimensionsSettings 
+              element={selectedElement} 
+              onStyleChange={handleStyleChange}
+              currentDevice={currentDevice}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="decorations" className="border-b">
+          <AccordionTrigger className="py-2 text-sm hover:no-underline">
+            Decorations
+          </AccordionTrigger>
+          <AccordionContent className="pb-2">
+            <DecorationsSettings 
+              element={selectedElement} 
+              onStyleChange={handleStyleChange}
+              currentDevice={currentDevice}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        {(selectedElement.type === 'container' || selectedElement.type === '2Col') && (
+          <AccordionItem value="flexbox" className="border-b">
             <AccordionTrigger className="py-2 text-sm hover:no-underline">
-              Typography
+              Flexbox
             </AccordionTrigger>
             <AccordionContent className="pb-2">
-              <TypographySettings 
-                element={selectedElement} 
-                onStyleChange={handleStyleChange}
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="dimensions" className="border-b">
-            <AccordionTrigger className="py-2 text-sm hover:no-underline">
-              Dimensions
-            </AccordionTrigger>
-            <AccordionContent className="pb-2">
-              <DimensionsSettings 
-                element={selectedElement} 
-                onStyleChange={handleStyleChange}
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="decorations" className="border-b">
-            <AccordionTrigger className="py-2 text-sm hover:no-underline">
-              Decorations
-            </AccordionTrigger>
-            <AccordionContent className="pb-2">
-              <DecorationsSettings 
-                element={selectedElement} 
-                onStyleChange={handleStyleChange}
-              />
-            </AccordionContent>
-          </AccordionItem>
-
-          {(selectedElement.type === 'container' || selectedElement.type === '2Col') && (
-            <AccordionItem value="flexbox" className="border-b">
-              <AccordionTrigger className="py-2 text-sm hover:no-underline">
-                Flexbox
-              </AccordionTrigger>
-              <AccordionContent className="pb-2">
-                <div className="grid gap-4 px-1">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-muted-foreground text-sm">Direction</label>
-                    <select
-                      className="border p-2 rounded-md"
-                      value={selectedElement.styles.flexDirection as string || 'row'}
-                      onChange={(e) => handleStyleChange('flexDirection', e.target.value)}
-                    >
-                      <option value="row">Row</option>
-                      <option value="column">Column</option>
-                      <option value="row-reverse">Row Reverse</option>
-                      <option value="column-reverse">Column Reverse</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-muted-foreground text-sm">Justify Content</label>
-                      <select
-                        className="border p-2 rounded-md"
+              <div className="grid gap-4 px-1">
+<div className="flex flex-col gap-2">
+                  <label className="text-muted-foreground text-sm">Direction</label>
+  <select
+                    className="border p-2 rounded-md"
+                    value={selectedElement.styles.flexDirection as string || 'row'}
+                    onChange={(e) => handleStyleChange('flexDirection', e.target.value)}
+                  >
+                    <option value="row">Row</option>
+                    <option value="column">Column</option>
+                    <option value="row-reverse">Row Reverse</option>
+                    <option value="column-reverse">Column Reverse</option>
+  </select>
+</div>
+          
+                <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-2">
+                    <label className="text-muted-foreground text-sm">Justify Content</label>
+              <select
+                className="border p-2 rounded-md"
                         value={selectedElement.styles.justifyContent as string || 'flex-start'}
                         onChange={(e) => handleStyleChange('justifyContent', e.target.value)}
                       >
@@ -173,12 +206,12 @@ const SettingsTab = () => {
                         <option value="space-between">Space Between</option>
                         <option value="space-around">Space Around</option>
                         <option value="space-evenly">Space Evenly</option>
-                      </select>
-                    </div>
+              </select>
+            </div>
 
-                    <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
                       <label className="text-muted-foreground text-sm">Align Items</label>
-                      <select
+                <select
                         className="border p-2 rounded-md"
                         value={selectedElement.styles.alignItems as string || 'stretch'}
                         onChange={(e) => handleStyleChange('alignItems', e.target.value)}
@@ -188,13 +221,13 @@ const SettingsTab = () => {
                         <option value="center">Center</option>
                         <option value="stretch">Stretch</option>
                         <option value="baseline">Baseline</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-2">
                     <label className="text-muted-foreground text-sm">Gap</label>
-                    <input
+                  <input
                       type="text"
                       className="border p-2 rounded-md"
                       value={selectedElement.styles.gap as string || ''}
@@ -205,7 +238,7 @@ const SettingsTab = () => {
 
                   <div className="flex flex-col gap-2">
                     <label className="text-muted-foreground text-sm">Flex Wrap</label>
-                    <select
+                <select
                       className="border p-2 rounded-md"
                       value={selectedElement.styles.flexWrap as string || 'nowrap'}
                       onChange={(e) => handleStyleChange('flexWrap', e.target.value)}
@@ -216,97 +249,97 @@ const SettingsTab = () => {
                     </select>
                   </div>
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-          )}
+          </AccordionContent>
+        </AccordionItem>
+        )}
 
-          {selectedElement.type === 'grid' && (
-            <AccordionItem value="grid" className="border-b">
-              <AccordionTrigger className="py-2 text-sm hover:no-underline">
-                Grid Layout
-              </AccordionTrigger>
-              <AccordionContent className="pb-2">
-                <div className="grid gap-4 px-1">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-muted-foreground text-sm">Grid Template Columns</label>
-                    <input
-                      type="text"
-                      className="border p-2 rounded-md"
-                      value={selectedElement.styles.gridTemplateColumns as string || ''}
-                      onChange={(e) => handleStyleChange('gridTemplateColumns', e.target.value)}
-                      placeholder="repeat(3, 1fr)"
-                    />
-                  </div>
+        {selectedElement.type === 'grid' && (
+          <AccordionItem value="grid" className="border-b">
+            <AccordionTrigger className="py-2 text-sm hover:no-underline">
+              Grid Layout
+        </AccordionTrigger>
+            <AccordionContent className="pb-2">
+              <div className="grid gap-4 px-1">
+          <div className="flex flex-col gap-2">
+                  <label className="text-muted-foreground text-sm">Grid Template Columns</label>
+              <input
+                    type="text"
+                    className="border p-2 rounded-md"
+                    value={selectedElement.styles.gridTemplateColumns as string || ''}
+                    onChange={(e) => handleStyleChange('gridTemplateColumns', e.target.value)}
+                    placeholder="repeat(3, 1fr)"
+                  />
+          </div>
+          
+                <div className="flex flex-col gap-2">
+                  <label className="text-muted-foreground text-sm">Grid Template Rows</label>
+                  <input
+                    type="text"
+                    className="border p-2 rounded-md"
+                    value={selectedElement.styles.gridTemplateRows as string || ''}
+                    onChange={(e) => handleStyleChange('gridTemplateRows', e.target.value)}
+                    placeholder="auto"
+            />
+          </div>
+          
+                <div className="flex flex-col gap-2">
+                  <label className="text-muted-foreground text-sm">Grid Gap</label>
+              <input
+                    type="text"
+                    className="border p-2 rounded-md"
+                    value={selectedElement.styles.gap as string || ''}
+                    onChange={(e) => handleStyleChange('gap', e.target.value)}
+                    placeholder="0px"
+              />
+            </div>
 
-                  <div className="flex flex-col gap-2">
-                    <label className="text-muted-foreground text-sm">Grid Template Rows</label>
-                    <input
-                      type="text"
-                      className="border p-2 rounded-md"
-                      value={selectedElement.styles.gridTemplateRows as string || ''}
-                      onChange={(e) => handleStyleChange('gridTemplateRows', e.target.value)}
-                      placeholder="auto"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-muted-foreground text-sm">Grid Gap</label>
-                    <input
-                      type="text"
-                      className="border p-2 rounded-md"
-                      value={selectedElement.styles.gap as string || ''}
-                      onChange={(e) => handleStyleChange('gap', e.target.value)}
-                      placeholder="0px"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-muted-foreground text-sm">Justify Items</label>
-                    <select
-                      className="border p-2 rounded-md"
-                      value={selectedElement.styles.justifyItems as string || 'stretch'}
-                      onChange={(e) => handleStyleChange('justifyItems', e.target.value)}
-                    >
-                      <option value="start">Start</option>
-                      <option value="end">End</option>
-                      <option value="center">Center</option>
-                      <option value="stretch">Stretch</option>
-                    </select>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-muted-foreground text-sm">Align Items</label>
-                    <select
-                      className="border p-2 rounded-md"
-                      value={selectedElement.styles.alignItems as string || 'stretch'}
-                      onChange={(e) => handleStyleChange('alignItems', e.target.value)}
-                    >
-                      <option value="start">Start</option>
-                      <option value="end">End</option>
-                      <option value="center">Center</option>
-                      <option value="stretch">Stretch</option>
-                    </select>
-                  </div>
+          <div className="flex flex-col gap-2">
+                  <label className="text-muted-foreground text-sm">Justify Items</label>
+                <select
+                  className="border p-2 rounded-md"
+                        value={selectedElement.styles.justifyItems as string || 'stretch'}
+                        onChange={(e) => handleStyleChange('justifyItems', e.target.value)}
+                      >
+                        <option value="start">Start</option>
+                        <option value="end">End</option>
+                        <option value="center">Center</option>
+                        <option value="stretch">Stretch</option>
+            </select>
+          </div>
+          
+                <div className="flex flex-col gap-2">
+                  <label className="text-muted-foreground text-sm">Align Items</label>
+                  <select
+                    className="border p-2 rounded-md"
+                    value={selectedElement.styles.alignItems as string || 'stretch'}
+                    onChange={(e) => handleStyleChange('alignItems', e.target.value)}
+                  >
+                    <option value="start">Start</option>
+                    <option value="end">End</option>
+                    <option value="center">Center</option>
+                    <option value="stretch">Stretch</option>
+                  </select>
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-          )}
+          </div>
+            </AccordionContent>
+          </AccordionItem>
+        )}
 
-          {selectedElement.type && (
-            <AccordionItem value="custom" className="border-b">
-              <AccordionTrigger className="py-2 text-sm hover:no-underline">
-                Element Settings
-              </AccordionTrigger>
-              <AccordionContent className="pb-2">
-                <CustomSettings
-                  element={selectedElement}
-                  customSettings={selectedElement.customSettings || {}}
-                  onCustomSettingChange={handleChangeCustomValues}
-                />
-              </AccordionContent>
-            </AccordionItem>
-          )}
-        </Accordion>
+        {selectedElement.type && (
+          <AccordionItem value="custom" className="border-b">
+            <AccordionTrigger className="py-2 text-sm hover:no-underline">
+              Element Settings
+            </AccordionTrigger>
+            <AccordionContent className="pb-2">
+              <CustomSettings
+                element={selectedElement}
+                customSettings={selectedElement.customSettings || {}}
+                onCustomSettingChange={handleChangeCustomValues}
+              />
+        </AccordionContent>
+      </AccordionItem>
+        )}
+      </Accordion>
       </div>
     </div>
   )

@@ -1,32 +1,35 @@
 import React, { useState } from 'react'
 import { EditorElement } from '@/providers/editor/editor-provider'
-import { UnitInput, StyleUnit, } from './SettingsInput'
+import { UnitInput, StyleUnit } from './SettingsInput'
+import { getResponsiveValue } from './styleUtils'
 
 interface DimensionsSettingsProps {
   element: EditorElement;
   onStyleChange: (property: string, value: string | number) => void;
+  currentDevice: 'Desktop' | 'Tablet' | 'Mobile';
 }
 
 export const DimensionsSettings: React.FC<DimensionsSettingsProps> = ({
   element,
-  onStyleChange
+  onStyleChange,
+  currentDevice
 }) => {
   // State for current units
   const [marginUnit, setMarginUnit] = useState<StyleUnit['value']>('px');
   const [paddingUnit, setPaddingUnit] = useState<StyleUnit['value']>('px');
   const [sizeUnit, setSizeUnit] = useState<StyleUnit['value']>('px');
   
-  // Extract current dimensions from styles
-  const width = element.styles.width as string || '';
-  const height = element.styles.height as string || '';
-  const marginTop = element.styles.marginTop as string || '';
-  const marginRight = element.styles.marginRight as string || '';
-  const marginBottom = element.styles.marginBottom as string || '';
-  const marginLeft = element.styles.marginLeft as string || '';
-  const paddingTop = element.styles.paddingTop as string || '';
-  const paddingRight = element.styles.paddingRight as string || '';
-  const paddingBottom = element.styles.paddingBottom as string || '';
-  const paddingLeft = element.styles.paddingLeft as string || '';
+  // Extract current dimensions from styles with device-specific overrides
+  const width = getResponsiveValue(element, "width", currentDevice) as string || '';
+  const height = getResponsiveValue(element, "height", currentDevice) as string || '';
+  const marginTop = getResponsiveValue(element, "marginTop", currentDevice) as string || '';
+  const marginRight = getResponsiveValue(element, "marginRight", currentDevice) as string || '';
+  const marginBottom = getResponsiveValue(element, "marginBottom", currentDevice) as string || '';
+  const marginLeft = getResponsiveValue(element, "marginLeft", currentDevice) as string || '';
+  const paddingTop = getResponsiveValue(element, "paddingTop", currentDevice) as string || '';
+  const paddingRight = getResponsiveValue(element, "paddingRight", currentDevice) as string || '';
+  const paddingBottom = getResponsiveValue(element, "paddingBottom", currentDevice) as string || '';
+  const paddingLeft = getResponsiveValue(element, "paddingLeft", currentDevice) as string || '';
 
   return (
     <div className="grid gap-4 px-1">

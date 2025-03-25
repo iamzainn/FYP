@@ -1,70 +1,84 @@
 'use client'
 
 import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
-import React from 'react'
+import React, { useMemo } from 'react'
 import clsx from 'clsx'
 import Recursive from './recursive'
-import { Badge } from '@/components/ui/badge'
-import { Trash } from 'lucide-react'
-import { EditorBtns } from '@/lib/constants'
+import ComponentWrapper from './ComponentWrapper'
 
 interface HeroSectionProps {
   element: EditorElement
 }
 
 const HeroSectionComponent = ({ element }: HeroSectionProps) => {
-  const { id, content, styles, customSettings, type } = element
-  const { dispatch, state } = useEditor()
+  const { content, styles, customSettings } = element
+  const { state } = useEditor()
+  const isSelected = state.editor.selectedElement.id === element.id && !state.editor.liveMode
 
-  const handleOnClickBody = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    dispatch({
-      type: "CHANGE_CLICKED_ELEMENT",
-      payload: {
-        elementDetails: element
-      }
-    })
-  }
+  // Get custom settings with defaults
+  const {
+    overlayColor = 'rgba(0,0,0,0.5)',
+    overlayOpacity = '50',
+    heroLayout = 'center',
+    
+    contentSpacing = 'normal'
+  } = customSettings || {}
 
-  const handleOnDrop = (e: React.DragEvent, id: string) => {
-    e.stopPropagation()
-    const componentType = e.dataTransfer.getData('componentType') as EditorBtns
-    if (componentType) {
-      dispatch({
-        type: 'ADD_ELEMENT',
-        payload: {
-          containerId: id,
-          elementDetails: {
-            content: [],
-            id: crypto.randomUUID(),
-            name: componentType,
-            styles: {},
-            type: componentType,
-          },
-        },
-      })
+  // Determine layout class based on heroLayout
+  const layoutClass = useMemo(() => {
+    switch (heroLayout) {
+      case 'left':
+        return 'items-start text-left';
+      case 'right':
+        return 'items-end text-right';
+      case 'center':
+      default:
+        return 'items-center text-center';
     }
-  }
+  }, [heroLayout]);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-  }
+  // Apply content spacing
+  const spacingClass = useMemo(() => {
+    switch (contentSpacing) {
+      case 'compact':
+        return 'gap-2';
+      case 'spacious':
+        return 'gap-8';
+      case 'normal':
+      default:
+        return 'gap-4';
+    }
+  }, [contentSpacing]);
 
-  const handleDragStart = (e: React.DragEvent, type: string) => {
-    if (type === '__body') return
-    e.dataTransfer.setData('componentType', type)
-  }
-
-  const handleDeleteElement = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    dispatch({
-      type: 'DELETE_ELEMENT',
-      payload: { elementDetails: element },
-    })
-  }
-
-  // Get overlay color from customSettings
-  const overlayColor = customSettings?.overlayColor as string || 'rgba(0,0,0,0.5)'
+  // Process overlay color with opacity
+  const processedOverlayColor = useMemo(() => {
+    try {
+      if (!overlayColor) return 'rgba(0,0,0,0.5)';
+      
+      // Handle rgba format
+      if (overlayColor.toString().startsWith('rgba')) {
+        const rgbaMatch = overlayColor.toString().match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/);
+        if (rgbaMatch) {
+          const [, r, g, b] = rgbaMatch;
+          const opacity = parseFloat(overlayOpacity as string) / 100;
+          return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        }
+      }
+      
+      // Handle hex format
+      if (overlayColor.toString().startsWith('#')) {
+        const r = parseInt(overlayColor.toString().slice(1, 3), 16);
+        const g = parseInt(overlayColor.toString().slice(3, 5), 16);
+        const b = parseInt(overlayColor.toString().slice(5, 7), 16);
+        const opacity = parseFloat(overlayOpacity as string) / 100;
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+      }
+      
+      return overlayColor;
+    } catch (error) {
+      return 'rgba(0,0,0,0.5)';
+    }
+  }, [overlayColor, overlayOpacity]);
 
   // For the overlay effect
   const overlayStyles: React.CSSProperties = {
@@ -73,58 +87,37 @@ const HeroSectionComponent = ({ element }: HeroSectionProps) => {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: overlayColor as string,
+    backgroundColor: processedOverlayColor as string,
     zIndex: 1,
   }
 
+  const containerStyles = {
+    ...styles,
+    ...(isSelected && !state.editor.liveMode ? {
+      outline: '2px solid #3b82f6',
+      outlineOffset: '2px',
+    } : !state.editor.liveMode ? {
+      outline: '1px dashed #cbd5e1',
+      outlineOffset: '2px',
+    } : {})
+  }
+
   return (
-    <div
-      style={styles}
-      className={clsx('relative w-full', {
-        'border-blue-500 border-[1px]': 
-          state.editor.selectedElement.id === id && 
-          !state.editor.liveMode,
-        'border-solid': 
-          state.editor.selectedElement.id === id && 
-          !state.editor.liveMode,
-        'border-dashed border-[1px] border-slate-300': !state.editor.liveMode,
-      })}
-      id={id}
-      onDrop={(e) => handleOnDrop(e, id)}
-      onDragOver={handleDragOver}
-      draggable={type !== '__body'}
-      onClick={handleOnClickBody}
-      onDragStart={(e) => handleDragStart(e, type || 'heroSection')}
-    >
-      {/* Overlay div */}
-      <div style={overlayStyles} />
-
-      {state.editor.selectedElement.id === element.id &&
-        !state.editor.liveMode && (
-          <Badge className="absolute -top-[23px] -left-[1px] rounded-none rounded-t-lg z-10">
-            {state.editor.selectedElement.name}
-          </Badge>
-        )}
-
-      {/* Hero content container */}
-      <div className="relative z-10 w-full max-w-screen-xl mx-auto flex flex-col items-center">
-        {Array.isArray(content) &&
-          content.map((childElement) => (
-            <Recursive key={childElement.id} element={childElement} />
-          ))}
+    <ComponentWrapper element={element}>
+      <div style={containerStyles} className="relative w-full">
+        <div style={overlayStyles} />
+        <div className={clsx(
+          'relative z-10 w-full max-w-screen-xl mx-auto flex flex-col', 
+          layoutClass, 
+          spacingClass
+        )}>
+          {Array.isArray(content) &&
+            content.map((childElement) => (
+              <Recursive key={childElement.id} element={childElement} />
+            ))}
+        </div>
       </div>
-
-      {state.editor.selectedElement.id === element.id &&
-        !state.editor.liveMode && (
-          <div className="absolute bg-primary px-2.5 py-1 text-xs font-bold -top-[25px] -right-[1px] rounded-none rounded-t-lg text-white z-10">
-            <Trash
-              className="cursor-pointer"
-              size={16}
-              onClick={handleDeleteElement}
-            />
-          </div>
-        )}
-    </div>
+    </ComponentWrapper>
   )
 }
 

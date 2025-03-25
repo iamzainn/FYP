@@ -2,21 +2,24 @@ import React from 'react'
 import { EditorElement } from '@/providers/editor/editor-provider'
 import { ColorInput } from './SettingsInput'
 import { Slider } from '@/components/ui/slider'
+import { getResponsiveValue } from './styleUtils'
 
 interface DecorationsSettingsProps {
   element: EditorElement;
   onStyleChange: (property: string, value: string | number) => void;
+  currentDevice: 'Desktop' | 'Tablet' | 'Mobile';
 }
 
 export const DecorationsSettings: React.FC<DecorationsSettingsProps> = ({
   element,
-  onStyleChange
+  onStyleChange,
+  currentDevice
 }) => {
-  // Extract current values from styles
-  const backgroundColor = element.styles.backgroundColor as string || '';
-  const backgroundImage = element.styles.backgroundImage as string || '';
-  const borderRadius = element.styles.borderRadius as string || '';
-  const opacity = element.styles.opacity as string || '100%';
+  // Extract current values from styles with device-specific overrides
+  const backgroundColor = getResponsiveValue(element, "backgroundColor", currentDevice) as string || '';
+  const backgroundImage = getResponsiveValue(element, "backgroundImage", currentDevice) as string || '';
+  const borderRadius = getResponsiveValue(element, "borderRadius", currentDevice) as string || '';
+  const opacity = getResponsiveValue(element, "opacity", currentDevice) as string || '100%';
   
   // Parse opacity value for the slider
   const getOpacityValue = (): number => {

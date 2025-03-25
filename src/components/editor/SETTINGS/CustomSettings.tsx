@@ -1,6 +1,12 @@
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React from 'react'
 import { EditorElement } from '@/providers/editor/editor-provider'
 import { ButtonInput, ColorInput, SelectInput, TextInput } from './SettingsInput'
+import {  Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 interface CustomSettingsProps {
   element: EditorElement;
@@ -139,8 +145,75 @@ export const customSettingsConfig: CustomSettingsMap = {
         ]
       }
     ]
+  },
+  'image': {
+    title: 'Image Settings',
+    settings: [
+      {
+        id: 'src',
+        label: 'Image URL',
+        type: 'text',
+        placeholder: 'https://example.com/image.jpg'
+      },
+      {
+        id: 'alt',
+        label: 'Alt Text',
+        type: 'text',
+        placeholder: 'Descriptive text'
+      },
+      {
+        id: 'objectFit',
+        label: 'Object Fit',
+        type: 'select',
+        options: [
+          { value: 'cover', label: 'Cover' },
+          { value: 'contain', label: 'Contain' },
+          { value: 'fill', label: 'Fill' },
+          { value: 'none', label: 'None' }
+        ]
+      }
+    ]
+  },
+  'button': {
+    title: 'Button Settings',
+    settings: [
+      {
+        id: 'buttonText',
+        label: 'Button Text',
+        type: 'text',
+        placeholder: 'Click Me'
+      },
+      {
+        id: 'href',
+        label: 'Link URL',
+        type: 'text',
+        placeholder: 'https://example.com'
+      },
+      {
+        id: 'target',
+        label: 'Open in',
+        type: 'select',
+        options: [
+          { value: '_self', label: 'Same window' },
+          { value: '_blank', label: 'New window' }
+        ]
+      },
+      {
+        id: 'buttonVariant',
+        label: 'Style Variant',
+        type: 'select',
+        options: [
+          { value: 'primary', label: 'Primary' },
+          { value: 'secondary', label: 'Secondary' },
+          { value: 'outline', label: 'Outline' },
+          { value: 'ghost', label: 'Ghost' }
+        ]
+      }
+    ]
   }
-};
+}
+
+
 
 export const CustomSettings: React.FC<CustomSettingsProps> = ({
   element,
@@ -186,6 +259,226 @@ export const CustomSettings: React.FC<CustomSettingsProps> = ({
       document.dispatchEvent(customEvent);
     }
   };
+
+  // Add these to your CustomSettings.tsx file to support the new component types
+
+  // Image settings
+  
+  if (element.type === 'image' && typeof element.content === 'object') {
+    return (
+      <div className="flex flex-col gap-4">
+        <h3 className="text-lg font-medium">Image Settings</h3>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="src">Image URL</Label>
+          <Input
+            id="src"
+            placeholder="https://example.com/image.jpg"
+            value={(element.content as { src?: string }).src || ''}
+            onChange={(e) => {
+              onCustomSettingChange('src', e.target.value);
+            }}
+          />
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="alt">Alt Text</Label>
+          <Input
+            id="alt"
+            placeholder="Descriptive text"
+            value={(element.content as { alt?: string }).alt || ''}
+            onChange={(e) => {
+              onCustomSettingChange('alt', e.target.value);
+            }}
+          />
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="objectFit">Object Fit</Label>
+          <Select
+            value={(element.customSettings?.objectFit as string) || 'cover'}
+            onValueChange={(value) => {
+              onCustomSettingChange('objectFit', value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select object fit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cover">Cover</SelectItem>
+              <SelectItem value="contain">Contain</SelectItem>
+              <SelectItem value="fill">Fill</SelectItem>
+              <SelectItem value="none">None</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  }
+
+  // Button settings
+  if (element.type === 'button' ) {
+    return (
+      <div className="flex flex-col gap-4">
+        <h3 className="text-lg font-medium">Button Settings</h3>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="buttonText">Button Text</Label>
+          <Input
+            id="buttonText"
+            placeholder="Click Me"
+            value={(element.content as { innerText?: string }).innerText || ''}
+            onChange={(e) => {
+              onCustomSettingChange('innerText', e.target.value);
+            }}
+          />
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="href">Link URL</Label>
+          <Input
+            id="href"
+            placeholder="https://example.com"
+            value={(element.content as { href?: string }).href || '#'}
+            onChange={(e) => {
+              onCustomSettingChange('href', e.target.value);
+            }}
+          />
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="target">Open in</Label>
+          <Select
+            value={(element.content as { target?: string }).target || '_self'}
+            onValueChange={(value) => {
+              onCustomSettingChange('target', value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select target" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="_self">Same window</SelectItem>
+              <SelectItem value="_blank">New window</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="buttonVariant">Style Variant</Label>
+          <Select
+            value={(element.customSettings?.buttonVariant as string) || 'primary'}
+            onValueChange={(value) => {
+              onCustomSettingChange('buttonVariant', value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select variant" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="primary">Primary</SelectItem>
+              <SelectItem value="secondary">Secondary</SelectItem>
+              <SelectItem value="outline">Outline</SelectItem>
+              <SelectItem value="ghost">Ghost</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  }
+
+  // Hero Section settings
+  if (element.type === 'heroSection') {
+    return (
+      <div className="flex flex-col gap-4">
+        <h3 className="text-lg font-medium">Hero Section Settings</h3>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="heroLayout">Layout Style</Label>
+          <Select
+            value={(element.customSettings?.heroLayout as string) || 'center'}
+            onValueChange={(value) => {
+              onCustomSettingChange('heroLayout', value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select layout" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="center">Content Centered</SelectItem>
+              <SelectItem value="left">Content Left</SelectItem>
+              <SelectItem value="right">Content Right</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="heroHeight">Section Height</Label>
+          <Select
+            value={(element.customSettings?.heroHeight as string) || '500px'}
+            onValueChange={(value) => {
+              onCustomSettingChange('heroHeight', value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select height" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="500px">Medium (500px)</SelectItem>
+              <SelectItem value="100vh">Full Screen</SelectItem>
+              <SelectItem value="400px">Small (400px)</SelectItem>
+              <SelectItem value="600px">Large (600px)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="overlayColor">Overlay Color</Label>
+          <Input
+            id="overlayColor"
+            type="color"
+            value={(element.customSettings?.overlayColor as string) || 'rgba(0,0,0,0.5)'}
+            onChange={(e) => {
+              onCustomSettingChange('overlayColor', e.target.value);
+            }}
+          />
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="overlayOpacity">Overlay Opacity (%)</Label>
+          <Input
+            id="overlayOpacity"
+            type="number"
+            min="0"
+            max="100"
+            value={(element.customSettings?.overlayOpacity as string) || '50'}
+            onChange={(e) => {
+              onCustomSettingChange('overlayOpacity', e.target.value);
+            }}
+          />
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="contentSpacing">Content Spacing</Label>
+          <Select
+            value={(element.customSettings?.contentSpacing as string) || 'normal'}
+            onValueChange={(value) => {
+              onCustomSettingChange('contentSpacing', value);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select spacing" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="normal">Normal</SelectItem>
+              <SelectItem value="compact">Compact</SelectItem>
+              <SelectItem value="spacious">Spacious</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 px-1">

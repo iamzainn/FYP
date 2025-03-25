@@ -1,155 +1,86 @@
 // src/components/editor/BUILDER/ButtonComponent.tsx
 'use client'
 
-import { Badge } from '@/components/ui/badge'
-import { EditorBtns } from '@/lib/constants'
 import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
-import clsx from 'clsx'
-import { Trash } from 'lucide-react'
 import React from 'react'
+import clsx from 'clsx'
+import ComponentWrapper from './ComponentWrapper'
 
-type Props = {
+interface ButtonProps {
   element: EditorElement
 }
 
-const ButtonComponent = ({ element }: Props) => {
-  const { dispatch, state } = useEditor()
-  const {  content, styles } = element
-  
-  // Extract text content or use default
-  const buttonText = typeof content === 'object' && 'innerText' in content 
-    ? content.innerText 
-    : 'Click me'
+const ButtonComponent = ({ element }: ButtonProps) => {
+  const { content, styles, customSettings } = element
+  const { state } = useEditor()
+  const isSelected = state.editor.selectedElement.id === element.id && !state.editor.liveMode
+
+  // Apply button variant styling
+  const getButtonVariantClass = () => {
+    const variant = customSettings?.buttonVariant || 'primary'
     
-  // Extract href if it exists
-  const buttonHref = typeof content === 'object' && 'href' in content 
-    ? content.href 
-    : '#'
-
-  // Handle element selection
-  const handleOnClickBody = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    dispatch({
-      type: 'CHANGE_CLICKED_ELEMENT',
-      payload: {
-        elementDetails: element,
-      },
-    })
-  }
-
-  // Handle element deletion
-  const handleDeleteElement = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    dispatch({
-      type: 'DELETE_ELEMENT',
-      payload: { elementDetails: element },
-    })
-  }
-
-  // Handle content update when in edit mode
-  const handleContentChange = (e: React.FormEvent<HTMLButtonElement>) => {
-    // Only update if we're not in live mode and this is the selected element
-    if (
-      state.editor.liveMode ||
-      state.editor.selectedElement.id !== element.id
-    )
-      return
-
-    const innerText = e.currentTarget.innerText
-
-    // Update element with new content
-    dispatch({
-      type: 'UPDATE_ELEMENT',
-      payload: {
-        elementDetails: {
-          ...element,
-          content: {
-            ...element.content,
-            innerText,
-          },
-        },
-      },
-    })
-  }
-
-  // Handle button click action when in live mode
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleButtonClick = (e: React.MouseEvent) => {
-    if (!state.editor.liveMode) return
-    
-    // If there's a href, navigate to it in live mode
-    if (buttonHref && buttonHref !== '#') {
-      window.open(buttonHref, '_blank')
+    switch (variant) {
+      case 'secondary':
+        return 'bg-gray-200 text-gray-800 hover:bg-gray-300';
+      case 'outline':
+        return 'bg-transparent border border-current hover:bg-opacity-10';
+      case 'ghost':
+        return 'bg-transparent hover:bg-opacity-10';
+      case 'primary':
+      default:
+        return '';
     }
   }
 
-  // Handle drag start for reordering
-  const handleDragStart = (e: React.DragEvent, type: EditorBtns) => {
-    if (type === null) return
-    e.dataTransfer.setData('componentType', type)
+  // Extract link details from content
+  const { innerText = 'Button', href = '#', target = '_self' } = content as { 
+    innerText?: string, 
+    href?: string, 
+    target?: string 
+  };
+
+  const buttonStyles = {
+    ...styles,
+    ...(isSelected && !state.editor.liveMode ? {
+      outline: '2px solid #3b82f6',
+      outlineOffset: '2px',
+    } : !state.editor.liveMode ? {
+      outline: '1px dashed #cbd5e1',
+      outlineOffset: '2px',
+    } : {})
+  }
+
+  // Button component handles differently based on mode
+  const ButtonElement = () => {
+    // In live mode, render as a real link
+    if (state.editor.liveMode || state.editor.previewMode) {
+      return (
+        <a 
+          href={href}
+          target={target}
+          style={buttonStyles}
+          className={clsx('transition-all duration-300', getButtonVariantClass())}
+        >
+          {innerText}
+        </a>
+      );
+    }
+    
+    // In edit mode, render as a div (no link functionality)
+    return (
+      <div 
+        style={buttonStyles}
+        className={clsx(getButtonVariantClass(), 'cursor-pointer')}
+      >
+        {innerText}
+      </div>
+    );
   }
 
   return (
-    <div
-      style={styles}
-      draggable
-      onDragStart={(e) => handleDragStart(e, 'button')}
-      onClick={handleOnClickBody}
-      className={clsx(
-        'relative m-[5px] transition-all',
-        {
-          '!border-blue-500': 
-            state.editor.selectedElement.id === element.id,
-          'border-solid': state.editor.selectedElement.id === element.id,
-          'border-dashed border-[1px] border-slate-300': !state.editor.liveMode,
-        }
-      )}
-    >
-      {/* Selection indicator badge */}
-      {state.editor.selectedElement.id === element.id &&
-        !state.editor.liveMode && (
-          <Badge className="absolute -top-[23px] -left-[1px] rounded-none rounded-t-lg">
-            {element.name}
-          </Badge>
-        )}
-      
-      {/* Button component */}
-      <button
-        contentEditable={
-          !state.editor.liveMode &&
-          state.editor.selectedElement.id === element.id
-        }
-        onBlur={handleContentChange}
-        onClick={handleButtonClick}
-        className={clsx(
-          'min-w-20 py-2 px-4 rounded-md transition-colors',
-          // Default styling if no custom styles are applied
-          {
-            'bg-primary text-primary-foreground hover:bg-primary/90': 
-              !styles.backgroundColor,
-            'cursor-default': 
-              !state.editor.liveMode,
-            'pointer-events-none': 
-              !state.editor.liveMode && state.editor.selectedElement.id !== element.id,
-          }
-        )}
-        suppressContentEditableWarning={true} // Suppress React warning for contentEditable
-      >
-        {buttonText}
-      </button>
-      
-      {/* Delete button */}
-      {state.editor.selectedElement.id === element.id &&
-        !state.editor.liveMode && (
-          <div className="absolute bg-primary px-2.5 py-1 text-xs font-bold -top-[25px] -right-[1px] rounded-none rounded-t-lg text-white">
-            <Trash
-              className="cursor-pointer"
-              size={16}
-              onClick={handleDeleteElement}
-            />
-          </div>
-        )}
-    </div>
+    <ComponentWrapper element={element}>
+      <ButtonElement />
+    </ComponentWrapper>
   )
 }
 

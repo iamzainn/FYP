@@ -3,103 +3,24 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { EditorBtns } from "@/lib/constants"
 import React from "react"
-import { TypeIcon, Youtube, LayoutTemplate, Type } from "lucide-react"
-import { LinkPlaceholder } from "./LinkPlaceholder"
-import TwoColumnsPlaceholder from "./BUILDER/TwoColPlaceHolder"
-import ContactFormComponentPlaceholder from "./ContactFormComponentPlaceholder"
-import ButtonPlaceholder from "./ButtonPlaceholder"
-import ImagePlaceholder from "./BUILDER/ImagePlaceholder"
-import DividerPlaceholder from "./BUILDER/DividerPlaceholder"
-import SpacerPlaceholder from "./BUILDER/SpacerPlaceholder"
-import BadgePlaceholder from "./BadgePlaceholder"
-import IconPlaceholder from "./BUILDER/IconPlaceholder"
-import ProductCardPlaceholder from "./Compound/ProductCardPlaceholder"
-import GridPlaceholder from "./BUILDER/GridPlaceholder"
-
-
-
-
-const TextPlaceholder = () => {
-  const handleDragStart = (e: React.DragEvent, type: EditorBtns) => {
-    if (type === null) return
-    e.dataTransfer.setData('componentType', type)
-  }
-
-  return (
-    <div
-      draggable
-      onDragStart={(e) => {
-        handleDragStart(e, 'text')
-      }}
-      className="h-14 w-14 bg-muted rounded-lg flex items-center justify-center"
-    >
-      <TypeIcon
-        size={40}
-        className="text-muted-foreground"
-      />
-    </div>
-  )
-}
-
-const ContainerPlaceholder = () => {
-  const handleDragStart = (e: React.DragEvent, type: EditorBtns) => {
-    if (type === null) return
-    e.dataTransfer.setData('componentType', type)
-  }
-  
-  return (
-    <div
-      draggable
-      onDragStart={(e) => handleDragStart(e, 'container')}
-      className="h-14 w-14 bg-muted/70 rounded-lg p-2 flex flex-row gap-[4px]"
-    >
-      <div className="border-dashed border-[1px] h-full rounded-sm bg-muted border-muted-foreground/50 w-full"></div>
-    </div>
-  )
-}
-
-const VideoPlaceholder = () => {
-  const handleDragStart = (e: React.DragEvent, type: EditorBtns) => {
-    if (type === null) return
-    e.dataTransfer.setData('componentType', type)
-  }
-  
-  return (
-    <div
-      draggable
-      onDragStart={(e) => handleDragStart(e, 'video')}
-      className="h-14 w-14 bg-muted rounded-lg flex items-center justify-center"
-    >
-      <Youtube
-        size={40}
-        className="text-muted-foreground"
-      />
-    </div>
-  )
-}
-
-const HeadingPlaceholder = () => {
-  const handleDragStart = (e: React.DragEvent, type: string) => {
-    e.dataTransfer.setData('componentType', type)
-  }
-  
-  return (
-    <div
-      draggable
-      onDragStart={(e) => handleDragStart(e, 'heading')}
-      className="h-14 w-full border-[1px] border-dashed rounded-lg flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-grab"
-    >
-      <div className="flex flex-col items-center gap-1">
-        <Type className="h-6 w-6 text-slate-500" />
-        <p className="text-xs">Heading</p>
-      </div>
-    </div>
-  )
-}
+import { LayoutTemplate } from "lucide-react"
+import { ComponentConfigs } from '@/lib/ComponentConfiguration'
 
 const HeroSectionPlaceholder = () => {
   const handleDragStart = (e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('componentType', type)
+    
+    if (type in ComponentConfigs) {
+      try {
+        const newElement = ComponentConfigs[type].create()
+        console.log("Creating new hero section for drag:", newElement)
+        e.dataTransfer.setData('componentData', JSON.stringify(newElement))
+      } catch (error) {
+        console.error("Error creating component data:", error)
+      }
+    } else {
+      console.warn(`No configuration found for component type: ${type}`)
+    }
   }
   
   return (
@@ -124,114 +45,26 @@ const ComponentsTab = () => {
     group: 'layout' | 'elements'| 'compound'
   }[] = [
     {
-      Component: <TextPlaceholder />,
-      label: 'Text',
-      id: 'text',
-      group: 'elements',
-    },
-    {
-      Component: <ContainerPlaceholder />,
-      label: 'Container',
-      id: 'container',
-      group: 'layout',
-    },
-    {
-      Component: <TwoColumnsPlaceholder />,
-      label: 'Two Columns',
-      id: '2Col',
-      group: 'layout',
-    },
-    
-    {
-      Component: <VideoPlaceholder />,
-      label: 'Video',
-      id: 'video',
-      group: 'elements',
-    },
-    {
       Component: <HeroSectionPlaceholder />,
       label: 'Hero Section',
       id: 'heroSection',
       group: 'layout',
     },
-    {
-      Component: <LinkPlaceholder />,
-      label: 'Link',
-      id: 'link',
-      group: 'elements',
-    },
-    {
-      Component: <ContactFormComponentPlaceholder />,
-      label: 'Contact',
-      id: 'contactForm',
-      group: 'elements',
-    },
-    {
-      Component: <ButtonPlaceholder />,
-      label: 'Button',
-      id: 'button',
-      group: 'elements',
-    },
-    {
-      Component: <ImagePlaceholder />,
-      label: 'Image',
-      id: 'image',
-      group: 'elements',
-    },
-    // Add to elements array
-{
-  Component: <BadgePlaceholder />,
-  label: 'Badge',
-  id: 'badge',
-  group: 'elements',
-},
-{
-  Component: <DividerPlaceholder />,
-  label: 'Divider',
-  id: 'divider',
-  group: 'elements',
-
-},
-// Add to imports
+   
+   
+   
+   
 
 
-// Add to elements array
-{
-  Component: <ProductCardPlaceholder />,
-  label: 'Product Card',
-  id: 'productCard',
-  group: 'compound', // New group for compound components
-},
 
 
-// Add to elements array
-{
-  Component: <IconPlaceholder />,
-  label: 'Icon',
-  id: 'icon',
-  group: 'elements',
-},
 
-// Add to elements array
-{
-  Component: <SpacerPlaceholder />,
-  label: 'Spacer',
-  id: 'spacer',
-  group: 'elements',
-},
+
+
+
     
-    {
-      Component: <GridPlaceholder />,
-      label: 'Grid Layout',
-      id: 'grid',
-      group: 'layout',
-    },
-    {
-      Component: <HeadingPlaceholder />,
-      label: 'Heading',
-      id: 'heading',
-      group: 'elements',
-    },
+   
+   
   ]
 
   return (

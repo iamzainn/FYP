@@ -1,6 +1,6 @@
 'use client'
 
-import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
+import { EditorAction, EditorElement, useEditor } from '@/providers/editor/editor-provider'
 import React from 'react'
 
 import clsx from 'clsx'
@@ -23,31 +23,50 @@ export const defaultStyles: React.CSSProperties = {
 }
 
 const Container = ({ element }: ContainerProps) => {
-  const { id, content,styles, type } = element
-
-
+  const { id, content, styles, type } = element
   const { dispatch, state } = useEditor()
 
   // Get the drop handler function
   const dropHandler = useDropHandler()
 
-  const handleOnClickBody = (e:React.MouseEvent)=>{
+  const handleOnClickBody = (e: React.MouseEvent) => {
     e.stopPropagation();
     dispatch({
-      type:"CHANGE_CLICKED_ELEMENT",
-      payload:{
-        elementDetails:element
+      type: "CHANGE_CLICKED_ELEMENT",
+      payload: {
+        elementDetails: element
       }
     })
   }
 
   const handleOnDrop = (e: React.DragEvent, id: string) => {
     e.stopPropagation()
-    console.log("element drop in container")
-    const componentType = e.dataTransfer.getData('componentType')
+    console.log("Element drop in container")
     
-    // Use the external drop handler
-    dropHandler(componentType as EditorBtns, id)
+    // Get both componentType and componentData
+    const componentType = e.dataTransfer.getData('componentType')
+    const componentData = e.dataTransfer.getData('componentData')
+    
+    console.log("Available data types:", e.dataTransfer.types)
+    console.log("Component type:", componentType)
+    console.log("Component data available:", Boolean(componentData))
+    
+    console.log("Component type for drop:", componentType);
+    if (componentData) {
+      try {
+        const parsedData = JSON.parse(componentData);
+        console.log("Dropping component with name:", parsedData.name, "and type:", parsedData.type);
+      } catch (e) {
+        console.error("Error parsing component data:", e);
+      }
+    }
+    
+    if (componentType) {
+      // Call dropHandler with the component data if available
+      const action = dropHandler(componentType as EditorBtns, id, componentData ? JSON.parse(componentData) : undefined)
+      console.log("Dispatching action:", action)
+      dispatch(action as EditorAction)
+    }
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -56,7 +75,11 @@ const Container = ({ element }: ContainerProps) => {
 
   const handleDragStart = (e: React.DragEvent, type: string) => {
     if (type === '__body') return
+    
+    // Also set component data for containers
+    const elementCopy = JSON.parse(JSON.stringify(element))
     e.dataTransfer.setData('componentType', type)
+    e.dataTransfer.setData('componentData', JSON.stringify(elementCopy))
   }
 
   const handleDeleteElement = (e: React.MouseEvent) => {
@@ -92,7 +115,7 @@ const Container = ({ element }: ContainerProps) => {
       onDragOver={handleDragOver}
       onClick={handleOnClickBody}
       draggable={type !== '__body'}
-      onDragStart={(e) => handleDragStart(e, 'container')}
+      onDragStart={(e) => handleDragStart(e, type || 'container')}
     >
       {Array.isArray(content) &&
         content.map((childElement) => (

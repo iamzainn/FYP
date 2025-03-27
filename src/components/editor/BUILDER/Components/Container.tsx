@@ -4,7 +4,7 @@ import { EditorAction, EditorElement, useEditor } from '@/providers/editor/edito
 import React from 'react'
 
 import clsx from 'clsx'
-import Recursive from './recursive'
+import Recursive from '../../recursive'
 import { Badge } from '@/components/ui/badge'
 import { Trash } from 'lucide-react'
 import { EditorBtns } from '@/lib/constants'

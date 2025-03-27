@@ -3,8 +3,39 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { EditorBtns } from "@/lib/constants"
 import React from "react"
-import { LayoutTemplate } from "lucide-react"
+import { LayoutTemplate,  MenuIcon } from "lucide-react"
 import { ComponentConfigs } from '@/lib/ComponentConfiguration'
+
+const HeaderPlaceholder = () => {
+  const handleDragStart = (e: React.DragEvent, type: string) => {
+    e.dataTransfer.setData('componentType', type)
+    
+    if (type in ComponentConfigs) {
+      try {
+        const newElement = ComponentConfigs[type].create()
+        console.log("Creating new header for drag:", newElement)
+        e.dataTransfer.setData('componentData', JSON.stringify(newElement))
+      } catch (error) {
+        console.error("Error creating component data:", error)
+      }
+    } else {
+      console.warn(`No configuration found for component type: ${type}`)
+    }
+  }
+  
+  return (
+    <div
+      draggable
+      onDragStart={(e) => handleDragStart(e, 'header')}
+      className="h-14 w-full border-[1px] border-dashed rounded-lg flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-grab"
+    >
+      <div className="flex flex-col items-center gap-1">
+        <MenuIcon className="h-6 w-6 text-slate-500" />
+        <p className="text-xs">Header</p>
+      </div>
+    </div>
+  )
+}
 
 const HeroSectionPlaceholder = () => {
   const handleDragStart = (e: React.DragEvent, type: string) => {
@@ -48,6 +79,12 @@ const ComponentsTab = () => {
       Component: <HeroSectionPlaceholder />,
       label: 'Hero Section',
       id: 'heroSection',
+      group: 'layout',
+    },
+    {
+      Component: <HeaderPlaceholder />,
+      label: 'Header',
+      id: 'header',
       group: 'layout',
     },
    

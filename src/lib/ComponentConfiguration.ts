@@ -49,6 +49,7 @@ export const HeadingConfig: ComponentConfig = {
         marginBottom: '0px',
       },
       mobile: {
+        display: 'none',
         fontSize: '1.25rem',
         textAlign: 'center',
         marginTop: '10px',
@@ -70,9 +71,9 @@ export const ImageConfig: ComponentConfig = {
       alt: 'Featured image'
     },
     styles: {
-      width: '100%',
+      width:200,
+      height:200,
       maxWidth: '500px',
-      height: 'auto',
       objectFit: 'cover',
       borderRadius: '8px',
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
@@ -80,11 +81,10 @@ export const ImageConfig: ComponentConfig = {
       marginBottom: '20px',
       marginLeft: '0px',
       marginRight: '0px',
-      zIndex: '5'
+      zIndex: '5',
+      
     },
-    customSettings: {
-      objectFit: 'cover'
-    },
+    
     responsiveSettings: {
       tablet: {
         maxWidth: '400px',
@@ -162,7 +162,7 @@ export const HeroSectionConfig: ComponentConfig = {
         fontWeight: 'bold',
         textAlign: 'center',
         marginTop: '0px',
-        marginBottom: '20px',
+        marginBottom: '2rem',
         zIndex: '5',
       },
       customSettings: {
@@ -240,11 +240,336 @@ export const HeroSectionConfig: ComponentConfig = {
   }
 }
 
+// Header component configuration
+export const HeaderConfig: ComponentConfig = {
+  create: () => ({
+    id: uuid(),
+    name: 'Header',
+    type: 'header',
+    content: [
+      // Box container for logos
+      {
+        id: uuid(),
+        name: 'Logo',
+        type: 'logo',
+        content: [
+          // Text Logo
+          {
+            id: uuid(),
+            name: 'LogoText',
+            type: 'heading',
+            content: {
+              innerText: 'Your Store',
+            },
+            styles: {
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              marginTop: '0',
+              marginBottom: '0',
+              marginLeft: '0',
+              marginRight: '0',
+              color: '#333',
+            },
+            customSettings: {
+              variant: 'h1'
+            },
+            responsiveSettings: {
+              mobile: {
+                display: 'none',
+              }
+            }
+          },
+          // Image Logo
+          {
+            id: uuid(),
+            name: 'LogoImage',
+            type: 'image',
+            content: {
+              src: 'https://via.placeholder.com/150x50?text=Your+Logo',
+              alt: 'Company logo'
+            },
+            styles: {
+              width: '120px',
+              height: 'auto',
+              objectFit: 'contain',
+              marginTop: '0',
+              marginBottom: '0',
+              marginLeft: '0',
+              marginRight: '0',
+            }
+          }
+        ],
+        styles: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: '3px',
+          order: 1,
+          
+        }
+      },
+      
+      // Navigation container
+      {
+        id: uuid(),
+        name: 'Navigation',
+        type: 'navigation',
+        content: [
+          {
+            id: uuid(),
+            name: 'Nav Item',
+            type: 'navItem',
+            content: { innerText: 'Home', href: '/' },
+            styles: {
+              paddingTop: '0.5rem',
+              paddingBottom: '0.5rem',
+              paddingLeft: '1rem',
+              paddingRight: '1rem',
+              color: '#333',
+              fontWeight: 'normal',
+              textDecoration: 'none',
+            },
+          },
+          {
+            id: uuid(),
+            name: 'Nav Item',
+            type: 'navItem',
+            content: { innerText: 'About', href: '/about' },
+            styles: {
+              paddingTop: '0.5rem',
+              paddingBottom: '0.5rem',
+              paddingLeft: '1rem',
+              paddingRight: '1rem',
+              color: '#333',
+              fontWeight: 'normal',
+              textDecoration: 'none',
+            },
+          },
+          {
+            id: uuid(),
+            name: 'Nav Item',
+            type: 'navItem',
+            content: { innerText: 'Contact', href: '/contact' },
+            styles: {
+              paddingTop: '0.5rem',
+              paddingBottom: '0.5rem',
+              paddingLeft: '1rem',
+              paddingRight: '1rem',
+              color: '#333',
+              fontWeight: 'normal',
+              textDecoration: 'none',
+            },
+          },
+        ],
+        styles: {
+          display: 'flex',
+          gap: '1rem',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          flexGrow: '1',
+          order: 2,
+        },
+      }
+    ],
+    styles: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between', 
+      paddingTop: '1rem',
+      paddingBottom: '1rem',
+      paddingLeft: '2rem',
+      paddingRight: '2rem',
+      backgroundColor: '#ffffff',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      width: '100%',
+      // zIndex: '100',
+    },
+    customSettings: {
+      headerLayout: 'logo-left', // Only needed setting (logo-left or logo-right)
+      stickyHeader: false,
+      showMobileMenu: true,
+    },
+    responsiveSettings: {
+      tablet: {
+        paddingTop: '0.75rem',
+        paddingBottom: '0.75rem',
+        paddingLeft: '1.5rem',
+        paddingRight: '1.5rem',
+      },
+      mobile: {
+        paddingTop: '0.5rem',
+        paddingBottom: '0.5rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem',
+      }
+    }
+  })
+}
+
+// Navigation component configuration
+export const NavigationConfig: ComponentConfig = {
+  create: () => ({
+    id: uuid(),
+    name: 'Navigation',
+    type: 'navigation',
+    content: [
+      {
+        id: uuid(),
+        name: 'Nav Item',
+        type: 'navItem',
+        content: { innerText: 'Home', href: '/' },
+        styles: {
+          paddingTop: '0.5rem',
+          paddingBottom: '0.5rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem',
+          color: '#333',
+          fontWeight: 'normal',
+          textDecoration: 'none',
+        },
+      },
+      {
+        id: uuid(),
+        name: 'Nav Item',
+        type: 'navItem',
+        content: { innerText: 'About', href: '/about' },
+        styles: {
+          paddingTop: '0.5rem',
+          paddingBottom: '0.5rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem',
+          color: '#333',
+          fontWeight: 'normal',
+          textDecoration: 'none',
+        },
+      },
+      {
+        id: uuid(),
+        name: 'Nav Item',
+        type: 'navItem',
+        content: { innerText: 'Contact', href: '/contact' },
+        styles: {
+          paddingTop: '0.5rem',
+          paddingBottom: '0.5rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem',
+          color: '#333',
+          fontWeight: 'normal',
+          textDecoration: 'none',
+        },
+      },
+    ],
+    styles: {
+      display: 'flex',
+      gap: '1rem',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      flexGrow: '1',
+      marginTop: '0px',
+      marginBottom: '0px',
+      marginLeft: '0px',
+      marginRight: '0px',
+    },
+  })
+}
+
+// Navigation Item configuration
+export const NavItemConfig: ComponentConfig = {
+  create: () => ({
+    id: uuid(),
+    name: 'Nav Item',
+    type: 'navItem',
+    content: { 
+      innerText: 'Navigation Item', 
+      href: '#' 
+    },
+    styles: {
+      paddingTop: '0.5rem',
+      paddingBottom: '0.5rem',
+      paddingLeft: '1rem',
+      paddingRight: '1rem',
+      marginTop: '0px',
+      marginBottom: '0px',
+      marginLeft: '0px',
+      marginRight: '0px',
+      color: '#333',
+      fontWeight: 'normal',
+      textDecoration: 'none',
+      cursor: 'pointer',
+    },
+  })
+}
+
+// Logo component configuration
+export const LogoConfig: ComponentConfig = {
+  create: () => ({
+    id: uuid(),
+    name: 'Logo',
+    type: 'logo',
+    content: [
+      // Text Logo
+      {
+        id: uuid(),
+        name: 'LogoText',
+        type: 'heading',
+        content: {
+          innerText: 'Your Store',
+        },
+        styles: {
+          fontSize: '1.5rem',
+          fontWeight: 'bold',
+          marginTop: '0',
+          marginBottom: '0',
+          marginLeft: '0',
+          marginRight: '0',
+          color: '#333',
+        },
+        customSettings: {
+          variant: 'h1'
+        },
+        responsiveSettings: {
+          mobile: {
+            display: 'none',
+          }
+        }
+      },
+      // Image Logo
+      {
+        id: uuid(),
+        name: 'LogoImage',
+        type: 'image',
+        content: {
+          src: 'https://via.placeholder.com/150x50?text=Your+Logo',
+          alt: 'Company logo'
+        },
+        styles: {
+          width: '120px',
+          height: 'auto',
+          objectFit: 'contain',
+          marginTop: '0',
+          marginBottom: '0',
+          marginLeft: '0',
+          marginRight: '0',
+        }
+      }
+    ],
+    styles: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '3px',
+      order: 3,
+    }
+  })
+}
+
 // Export a map of all component configurations
 export const ComponentConfigs: Record<string, ComponentConfig> = {
   'heading': HeadingConfig,
   'heroSection': HeroSectionConfig,
   'image': ImageConfig,
   'button': ButtonConfig,
+  'header': HeaderConfig,
+  'navigation': NavigationConfig,
+  'navItem': NavItemConfig,
+  'logo': LogoConfig,
   // Add other component configs as you develop them
 } as Record<string, ComponentConfig> 

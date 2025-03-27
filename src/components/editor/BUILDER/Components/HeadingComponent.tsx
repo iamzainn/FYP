@@ -4,41 +4,34 @@ import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
 import React, { useMemo } from 'react'
 
 import { useResponsiveStyles } from '@/hooks/useResponsiveStyles'
-import ComponentWrapper from './ComponentWrapper'
+import ComponentWrapper from '../../ComponentWrapper'
 
 interface HeadingComponentProps {
-  element: EditorElement
+  element: EditorElement & { isChildOfContainer?: boolean }
 }
 
 const HeadingComponent = ({ element }: HeadingComponentProps) => {
+  console.log("heading component rendered", element)
   const { content, customSettings } = element
   const { state } = useEditor()
   
   // Get responsive styles from our custom hook
   const { computedStyles } = useResponsiveStyles(element, state)
   
-  const isSelected = state.editor.selectedElement.id === element.id && !state.editor.liveMode
-  
-  // Extract heading variant from customSettings or default to h2
+  // Extract heading variant from customSettings (this is a valid customSetting as it's not CSS)
   const variant = useMemo(() => {
     return customSettings?.variant || 'h2'
   }, [customSettings])
   
   // Render the appropriate heading element based on the variant
   const renderHeading = () => {
+    // Get text from content.innerText - not from customSettings
     const headingText = typeof content === 'string' 
       ? content 
       : (content as { innerText: string }).innerText || 'Heading'
     
     const headingStyles = {
-      ...computedStyles,
-      ...(isSelected && !state.editor.liveMode ? {
-        outline: '2px solid #3b82f6',
-        outlineOffset: '2px',
-      } : !state.editor.liveMode ? {
-        outline: '1px dashed #cbd5e1',
-        outlineOffset: '2px',
-      } : {})
+      ...computedStyles
     }
     
     // Force re-render when variant changes by using the key
@@ -60,7 +53,10 @@ const HeadingComponent = ({ element }: HeadingComponentProps) => {
   }
 
   return (
-    <ComponentWrapper element={element}>
+    <ComponentWrapper 
+      element={element}
+      isChildOfContainer={element.isChildOfContainer}
+    >
       {renderHeading()}
     </ComponentWrapper>
   )

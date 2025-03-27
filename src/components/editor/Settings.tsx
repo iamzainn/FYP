@@ -2,7 +2,7 @@
 
 "use client"
 
-import { useEditor } from "@/providers/editor/editor-provider"
+import { EditorElement, useEditor } from "@/providers/editor/editor-provider"
 import {
   Accordion,
   AccordionContent,
@@ -75,7 +75,7 @@ const SettingsTab = () => {
     }
   }
 
-  const handleChangeCustomValues = (property: string, value: string | number) => {
+  const handleChangeCustomValues = (property: string, value: string | number | boolean | any[]) => {
     dispatch({
       type: 'UPDATE_ELEMENT',
       payload: {
@@ -87,6 +87,13 @@ const SettingsTab = () => {
           },
         },
       },
+    })
+  }
+
+  const handleUpdateElement = (element: EditorElement) => {
+    dispatch({
+      type: 'UPDATE_ELEMENT',
+      payload: { elementDetails: element },
     })
   }
 
@@ -135,15 +142,15 @@ const SettingsTab = () => {
         <AccordionItem value="typography" className="border-b">
           <AccordionTrigger className="py-2 text-sm hover:no-underline">
             Typography
-          </AccordionTrigger>
+            </AccordionTrigger>
           <AccordionContent className="pb-2">
             <TypographySettings 
               element={selectedElement} 
               onStyleChange={handleStyleChange}
               currentDevice={currentDevice}
             />
-          </AccordionContent>
-        </AccordionItem>
+            </AccordionContent>
+          </AccordionItem>
 
         <AccordionItem value="dimensions" className="border-b">
           <AccordionTrigger className="py-2 text-sm hover:no-underline">
@@ -180,7 +187,7 @@ const SettingsTab = () => {
               <div className="grid gap-4 px-1">
 <div className="flex flex-col gap-2">
                   <label className="text-muted-foreground text-sm">Direction</label>
-  <select
+    <select
                     className="border p-2 rounded-md"
                     value={selectedElement.styles.flexDirection as string || 'row'}
                     onChange={(e) => handleStyleChange('flexDirection', e.target.value)}
@@ -189,11 +196,11 @@ const SettingsTab = () => {
                     <option value="column">Column</option>
                     <option value="row-reverse">Row Reverse</option>
                     <option value="column-reverse">Column Reverse</option>
-  </select>
+    </select>
 </div>
-          
+            
                 <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
                     <label className="text-muted-foreground text-sm">Justify Content</label>
               <select
                 className="border p-2 rounded-md"
@@ -257,12 +264,12 @@ const SettingsTab = () => {
           <AccordionItem value="grid" className="border-b">
             <AccordionTrigger className="py-2 text-sm hover:no-underline">
               Grid Layout
-        </AccordionTrigger>
+          </AccordionTrigger>
             <AccordionContent className="pb-2">
               <div className="grid gap-4 px-1">
-          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
                   <label className="text-muted-foreground text-sm">Grid Template Columns</label>
-              <input
+                <input
                     type="text"
                     className="border p-2 rounded-md"
                     value={selectedElement.styles.gridTemplateColumns as string || ''}
@@ -273,15 +280,15 @@ const SettingsTab = () => {
           
                 <div className="flex flex-col gap-2">
                   <label className="text-muted-foreground text-sm">Grid Template Rows</label>
-                  <input
+                <input
                     type="text"
                     className="border p-2 rounded-md"
                     value={selectedElement.styles.gridTemplateRows as string || ''}
                     onChange={(e) => handleStyleChange('gridTemplateRows', e.target.value)}
                     placeholder="auto"
             />
-          </div>
-          
+            </div>
+            
                 <div className="flex flex-col gap-2">
                   <label className="text-muted-foreground text-sm">Grid Gap</label>
               <input
@@ -292,11 +299,11 @@ const SettingsTab = () => {
                     placeholder="0px"
               />
             </div>
-
-          <div className="flex flex-col gap-2">
+            
+            <div className="flex flex-col gap-2">
                   <label className="text-muted-foreground text-sm">Justify Items</label>
-                <select
-                  className="border p-2 rounded-md"
+              <select
+                className="border p-2 rounded-md"
                         value={selectedElement.styles.justifyItems as string || 'stretch'}
                         onChange={(e) => handleStyleChange('justifyItems', e.target.value)}
                       >
@@ -304,9 +311,9 @@ const SettingsTab = () => {
                         <option value="end">End</option>
                         <option value="center">Center</option>
                         <option value="stretch">Stretch</option>
-            </select>
-          </div>
-          
+              </select>
+            </div>
+            
                 <div className="flex flex-col gap-2">
                   <label className="text-muted-foreground text-sm">Align Items</label>
                   <select
@@ -320,7 +327,7 @@ const SettingsTab = () => {
                     <option value="stretch">Stretch</option>
                   </select>
                 </div>
-          </div>
+            </div>
             </AccordionContent>
           </AccordionItem>
         )}
@@ -335,9 +342,10 @@ const SettingsTab = () => {
                 element={selectedElement}
                 customSettings={selectedElement.customSettings || {}}
                 onCustomSettingChange={handleChangeCustomValues}
+                handleUpdateElement={handleUpdateElement}
               />
-        </AccordionContent>
-      </AccordionItem>
+          </AccordionContent>
+        </AccordionItem>
         )}
       </Accordion>
       </div>

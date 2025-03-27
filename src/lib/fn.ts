@@ -8,10 +8,10 @@ export const useDropHandler = () => {
     // If existingData is provided, use it (with a new ID)
     if (existingData) {
       return {
-        type: 'ADD_ELEMENT',
-        payload: {
+            type: 'ADD_ELEMENT',
+            payload: {
           containerId,
-          elementDetails: {
+              elementDetails: {
             ...existingData,
             id: crypto.randomUUID(), // Generate a new ID to avoid duplicates
           },
@@ -25,8 +25,8 @@ export const useDropHandler = () => {
       const newElement = configCreator.create(containerId);
       
       return {
-        type: 'ADD_ELEMENT',
-        payload: {
+      type: 'ADD_ELEMENT',
+      payload: {
           containerId,
           elementDetails: newElement,
         },
@@ -83,23 +83,23 @@ export const handleDropEvent = (
       try {
         // If we have component data, use that with a new ID
         const parsedData = JSON.parse(componentData)
-        dispatch({
-          type: 'ADD_ELEMENT',
-          payload: {
+    dispatch({
+      type: 'ADD_ELEMENT',
+      payload: {
             containerId: activeId,
-            elementDetails: {
+        elementDetails: {
               ...parsedData,
               id: crypto.randomUUID() // Ensure new ID
-            },
-          },
-        })
+        },
+      },
+    })
       } catch (error) {
         console.error("Error parsing component data:", error)
         // Use regular function instead of hook
         const elementDetails = createElementForType(componentType, activeId)
-        dispatch({
-          type: 'ADD_ELEMENT',
-          payload: {
+    dispatch({
+      type: 'ADD_ELEMENT',
+      payload: {
             containerId: activeId,
             elementDetails: elementDetails as EditorElement,
           },
@@ -108,9 +108,9 @@ export const handleDropEvent = (
     } else {
       // Use regular function instead of hook
       const elementDetails = createElementForType(componentType, activeId)
-      dispatch({
-        type: 'ADD_ELEMENT',
-        payload: {
+    dispatch({
+      type: 'ADD_ELEMENT',
+      payload: {
           containerId: activeId,
           elementDetails: elementDetails as EditorElement,
         },

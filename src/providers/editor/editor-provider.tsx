@@ -30,6 +30,14 @@ export type EditorElement = {
     columnCount?: number,
     columnGap?: string,
     target?: string,
+    justifyContent?: string,  
+    length?: number,
+    alignItems?: string,
+    alignContent?: string,
+    flexWrap?: string,
+    flexDirection?: string,
+    flexGrow?: number,
+    
   }
   customSettings?: {
     [key: string]: unknown
@@ -639,6 +647,8 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
         editor: {
           ...state.editor,
           previewMode: !state.editor.previewMode,
+          device: 'Desktop',
+
         },
       }
       
@@ -651,6 +661,7 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
         editor: {
           ...state.editor,
           liveMode: !state.editor.liveMode,
+          device: 'Desktop',
         },
       }
     }
@@ -855,22 +866,7 @@ const deleteAnElement = (
 }
 
 // Export the debug function for use in other components
-export const debugState = (action: string, state: EditorState) => {
-  console.log(`[DEBUG] Action: ${action}`);
-  console.log(`[DEBUG] Selected Element:`, state.editor.selectedElement);
-  console.log(`[DEBUG] History Index:`, state.history.currentIndex);
-  console.log(`[DEBUG] History Length:`, state.history.history.length);
-  
-  // Check if history and editor state are in sync
-  const historyElement = state.history.history[state.history.currentIndex]?.selectedElement;
-  const editorElement = state.editor.selectedElement;
-  
-  if (historyElement?.id !== editorElement?.id || historyElement?.type !== editorElement?.type) {
-    console.warn("[DEBUG] WARNING: History and editor selectedElement not in sync!");
-    console.log("History selectedElement:", historyElement);
-    console.log("Editor selectedElement:", editorElement);
-  }
-}
+
 
 // Add this helper function to check if element exists
 const elementExistsInArray = (elements: EditorElement[], id: string): boolean => {

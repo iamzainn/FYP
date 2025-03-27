@@ -9,9 +9,10 @@ interface WrapperProps {
   element: EditorElement;
   children: React.ReactNode;
   customDragHandler?: (e: React.DragEvent, element: EditorElement) => void;
+  isChildOfContainer?: boolean;
 }
 
-const ComponentWrapper = ({ element, children, customDragHandler }: WrapperProps) => {
+const ComponentWrapper = ({ element, children, customDragHandler, isChildOfContainer = false }: WrapperProps) => {
   const { dispatch, state } = useEditor()
   const isSelected = state.editor.selectedElement.id === element.id && !state.editor.liveMode
 
@@ -53,6 +54,9 @@ const ComponentWrapper = ({ element, children, customDragHandler }: WrapperProps
     }
   }
 
+  // Determine if we should show the border
+  const shouldShowBorder = !state.editor.liveMode && (isChildOfContainer || element.type === 'heroSection');
+
   return (
     <div
       className="relative"
@@ -60,6 +64,10 @@ const ComponentWrapper = ({ element, children, customDragHandler }: WrapperProps
       draggable={!state.editor.liveMode}
       onClick={handleOnClickBody}
       onDragStart={handleDragStart}
+      style={{
+        outline: isSelected ? '2px solid #3b82f6' : shouldShowBorder ? '1px dashed #cbd5e1' : 'none',
+        outlineOffset: isSelected || shouldShowBorder ? '2px' : '0',
+      }}
     >
       {/* Selection Badge */}
       {isSelected && (

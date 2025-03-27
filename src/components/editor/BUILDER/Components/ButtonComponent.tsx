@@ -4,16 +4,15 @@
 import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
 import React from 'react'
 import clsx from 'clsx'
-import ComponentWrapper from './ComponentWrapper'
+import ComponentWrapper from '../../ComponentWrapper'
 
 interface ButtonProps {
-  element: EditorElement
+  element: EditorElement & { isChildOfContainer?: boolean }
 }
 
 const ButtonComponent = ({ element }: ButtonProps) => {
   const { content, styles, customSettings } = element
   const { state } = useEditor()
-  const isSelected = state.editor.selectedElement.id === element.id && !state.editor.liveMode
 
   // Apply button variant styling
   const getButtonVariantClass = () => {
@@ -39,17 +38,6 @@ const ButtonComponent = ({ element }: ButtonProps) => {
     target?: string 
   };
 
-  const buttonStyles = {
-    ...styles,
-    ...(isSelected && !state.editor.liveMode ? {
-      outline: '2px solid #3b82f6',
-      outlineOffset: '2px',
-    } : !state.editor.liveMode ? {
-      outline: '1px dashed #cbd5e1',
-      outlineOffset: '2px',
-    } : {})
-  }
-
   // Button component handles differently based on mode
   const ButtonElement = () => {
     // In live mode, render as a real link
@@ -58,7 +46,7 @@ const ButtonComponent = ({ element }: ButtonProps) => {
         <a 
           href={href}
           target={target}
-          style={buttonStyles}
+          style={styles}
           className={clsx('transition-all duration-300', getButtonVariantClass())}
         >
           {innerText}
@@ -66,10 +54,10 @@ const ButtonComponent = ({ element }: ButtonProps) => {
       );
     }
     
-    // In edit mode, render as a div (no link functionality)
+    // In edit mode, render as a div
     return (
       <div 
-        style={buttonStyles}
+        style={styles}
         className={clsx(getButtonVariantClass(), 'cursor-pointer')}
       >
         {innerText}
@@ -78,7 +66,10 @@ const ButtonComponent = ({ element }: ButtonProps) => {
   }
 
   return (
-    <ComponentWrapper element={element}>
+    <ComponentWrapper 
+      element={element}
+      isChildOfContainer={element.isChildOfContainer}
+    >
       <ButtonElement />
     </ComponentWrapper>
   )

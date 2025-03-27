@@ -7,8 +7,7 @@ import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
 import React, { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { EyeOff } from 'lucide-react'
-import Recursive from './BUILDER/recursive'
-import { debugState as providerDebugState } from '@/providers/editor/editor-provider'
+import Recursive from './recursive'
 
 interface EditorProps {
   storeId: string
@@ -22,12 +21,6 @@ const Editor = ({ storeId, liveMode }: EditorProps) => {
   
 
 
-  // Add debugging for Editor component
-  // const debugEditor = (message: string) => {
-  //   console.log(`[EDITOR] ${message}`);
-  //   console.log(`[EDITOR] Selected Element:`, state.editor.selectedElement);
-  //   console.log(`[EDITOR] Elements Count:`, state.editor.elements.length);
-  // }
 
 
   useEffect(() => {

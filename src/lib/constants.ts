@@ -22,3 +22,11 @@ export type EditorBtns =
   | 'grid'
   | 'heroSection'
   | 'heading'
+  | 'navItem'
+  | 'header'
+  | 'navigation'
+  | 'footer'
+  | 'form'
+  | 'input'
+  | 'logo'
+

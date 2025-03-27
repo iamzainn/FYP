@@ -2,7 +2,7 @@
 "use client"
 
 import { useEditor } from "@/providers/editor/editor-provider"
-import { useRouter } from "next/navigation"
+
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,7 +17,6 @@ import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import Link from "next/link"
 import clsx from "clsx"
-import { debugState as providerDebugState } from '@/providers/editor/editor-provider'
 
 // Icons
 import { 
@@ -87,11 +86,7 @@ export function EditorNavigation({
 }: EditorNavigationProps) {
   // const router = useRouter()
   const { state, dispatch } = useEditor()
-
-  console.log("Navigation Component")
-  
-  // Add debugging for Navigation component
-  
+ 
   
   const [title, setTitle] = useState(pageDetails?.title || "Untitled Page")
   const [isSaving, setIsSaving] = useState(false)
@@ -152,10 +147,8 @@ export function EditorNavigation({
       payload: { device, dispatch },
     });
     
-    // Call provider debug function for comprehensive info
-    if (typeof providerDebugState === 'function') {
-      providerDebugState('DEVICE_CHANGED', state);
-    }
+    
+   
   }
   
   // Handle preview mode toggle
@@ -167,32 +160,24 @@ export function EditorNavigation({
     dispatch({
       type: 'TOGGLE_LIVE_MODE'
     });
-    
-    // Call provider debug function for comprehensive info
-    if (typeof providerDebugState === 'function') {
-      providerDebugState('PREVIEW_TOGGLED', state);
+   
+     
     }
-  }
+  
   
   // Handle undo/redo
   const handleUndo = () => {
-    // debugNavigation("Undo requested");
+  
     dispatch({ type: 'UNDO' });
     
-    // Call provider debug function for comprehensive info
-    if (typeof providerDebugState === 'function') {
-      providerDebugState('UNDO', state);
-    }
+    
   }
   
   const handleRedo = () => {
     // debugNavigation("Redo requested");
     dispatch({ type: 'REDO' });
     
-    // Call provider debug function for comprehensive info
-    if (typeof providerDebugState === 'function') {
-      providerDebugState('REDO', state);
-    }
+   
   }
   
   // Keyboard shortcuts for undo/redo

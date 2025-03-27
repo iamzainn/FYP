@@ -3,8 +3,8 @@
 import { EditorElement, useEditor } from '@/providers/editor/editor-provider'
 import React, { useMemo } from 'react'
 import clsx from 'clsx'
-import Recursive from './recursive'
-import ComponentWrapper from './ComponentWrapper'
+import Recursive from '../../recursive'
+import ComponentWrapper from '../../ComponentWrapper'
 
 interface HeroSectionProps {
   element: EditorElement
@@ -113,7 +113,13 @@ const HeroSectionComponent = ({ element }: HeroSectionProps) => {
         )}>
           {Array.isArray(content) &&
             content.map((childElement) => (
-              <Recursive key={childElement.id} element={childElement} />
+              <Recursive 
+                key={childElement.id} 
+                element={{
+                  ...childElement,
+                  isChildOfContainer: true
+                } as EditorElement} 
+              />
             ))}
         </div>
       </div>

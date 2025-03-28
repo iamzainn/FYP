@@ -59,24 +59,48 @@ const ComponentWrapper = ({ element, children, customDragHandler, isChildOfConta
 
   return (
     <div
-      className="relative"
+      className="relative box-content"
       id={element.id}
       draggable={!state.editor.liveMode}
       onClick={handleOnClickBody}
       onDragStart={handleDragStart}
       style={{
+        // Use outline for selection indicators, which doesn't affect layout
         outline: isSelected ? '2px solid #3b82f6' : shouldShowBorder ? '1px dashed #cbd5e1' : 'none',
         outlineOffset: isSelected || shouldShowBorder ? '2px' : '0',
+        // Change from inline-block to block
+        display: 'block',
+        // Apply width to fill container
+        width: '100%',
+        // Keep original dimensions and don't affect the box model
+        boxSizing: 'content-box',
+        // Apply minimal wrapper margin to ensure outline visibility
+        margin: '2px',
       }}
     >
+      {/* Wrap the children in a div that enforces box model standards */}
+      <div 
+        className="editor-component-inner"
+        style={{
+          // Ensure all components follow standard box model
+          boxSizing: 'border-box',
+          // Other styles that should be preserved
+          position: 'relative',
+          // Force the component to respect its own CSS properties
+          display: 'block',
+          // Make sure inner div fills the wrapper
+          width: '100%'
+        }}
+      >
+        {children}
+      </div>
+
       {/* Selection Badge */}
       {isSelected && (
         <Badge className="absolute -top-[23px] -left-[1px] rounded-none rounded-t-lg z-20">
           {element.name}
         </Badge>
       )}
-
-      {children}
 
       {/* Delete Button */}
       {isSelected && (

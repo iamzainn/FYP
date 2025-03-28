@@ -68,7 +68,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  console.log("root layout")
+
   return (
     <html lang="en" suppressHydrationWarning className={`
       ${inter.variable} 

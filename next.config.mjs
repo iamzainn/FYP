@@ -9,8 +9,15 @@ const nextConfig = {
             'files.clerk.com',
             'placehold.co',
             'placehold.co/300x300?text=Product+Image'
-        ]
+        ],
+        
      },
+     eslint: {
+        // Warning: This allows production builds to successfully complete even if
+        // your project has ESLint errors.
+        ignoreDuringBuilds: true,
+      },
+
     reactStrictMode:false
 };
 

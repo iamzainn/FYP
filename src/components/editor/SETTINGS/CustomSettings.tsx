@@ -27,92 +27,37 @@ export interface CustomSetting {
   type: 'text' | 'color' | 'number' | 'select' | 'button' | 'checkbox';
   placeholder?: string;
   options?: { value: string; label: string }[];
+  defaultValue?: string | number;
+  min?: number;
+  max?: number;
 }
 
 export interface CustomSettingsMap {
   [key: string]: {
     title: string;
     settings: CustomSetting[];
+    
   };
+
 }
 
 // Custom settings definition
 export const customSettingsConfig: CustomSettingsMap = {
-  link: {
-    title: 'Link Settings',
-    settings: [
-      {
-        id: 'href',
-        label: 'URL',
-        type: 'text',
-        placeholder: 'https://example.com'
-      },
-      {
-        id: 'target',
-        label: 'Open in',
-        type: 'select',
-        options: [
-          { value: '_self', label: 'Same window' },
-          { value: '_blank', label: 'New window' }
-        ]
-      },
-      {
-        id: 'rel',
-        label: 'Link Relation',
-        type: 'select',
-        options: [
-          { value: '', label: 'None' },
-          { value: 'nofollow', label: 'No Follow' },
-          { value: 'noopener', label: 'No Opener' },
-          { value: 'noreferrer', label: 'No Referrer' }
-        ]
-      }
-    ]
-  },
-  '2Col': {
-    title: 'Column Settings',
-    settings: [
-      {
-        id: 'addColumn',
-        label: 'Add Column',
-        type: 'button'
-      }
-    ]
-  },
-  'grid': {
-    title: 'Grid Layout Settings',
-    settings: [
-      {
-        id: 'columnCount',
-        label: 'Columns',
-        type: 'select',
-        options: [
-          { value: '2', label: '2 Columns' },
-          { value: '3', label: '3 Columns' },
-          { value: '4', label: '4 Columns' },
-          { value: '6', label: '6 Columns' }
-        ]
-      },
-      {
-        id: 'addGridCell',
-        label: 'Add Grid Cell',
-        type: 'button'
-      }
-    ]
-  },
+ 
+  
   'heroSection': {
     title: 'Hero Section Settings',
     settings: [
       {
-        id: 'heroHeight',
-        label: 'Section Height',
+        id: 'heroLayout',
+        label: 'Layout Style',
         type: 'select',
         options: [
-          { value: '500px', label: 'Medium (500px)' },
-          { value: '100vh', label: 'Full Screen' },
-          { value: '400px', label: 'Small (400px)' },
-          { value: '600px', label: 'Large (600px)' },
-        ]
+          { value: 'center', label: 'Content Centered' },
+          { value: 'left', label: 'Content Left' },
+          { value: 'right', label: 'Content Right' },
+        ],
+        defaultValue: 'center'
       },
       {
         id: 'overlayColor',
@@ -121,14 +66,34 @@ export const customSettingsConfig: CustomSettingsMap = {
         placeholder: 'rgba(0,0,0,0.5)'
       },
       {
-        id: 'contentPosition',
-        label: 'Content Position',
+        id: 'overlayOpacity',
+        label: 'Overlay Opacity',
+        type: 'number',
+        defaultValue: 50,
+        min: 0,
+        max: 100
+      },
+      {
+        id: 'contentSpacing',
+        label: 'Content Spacing',
+        type: 'select',
+        options: [
+          { value: 'normal', label: 'Normal' },
+          { value: 'compact', label: 'Compact' },
+          { value: 'spacious', label: 'Spacious' },
+        ],
+        defaultValue: 'normal'
+      },
+      {
+        id: 'backgroundPosition',
+        label: 'Background Position',
         type: 'select',
         options: [
           { value: 'center', label: 'Center' },
-          { value: 'left', label: 'Left' },
-          { value: 'right', label: 'Right' },
-        ]
+          { value: 'top', label: 'Top' },
+          { value: 'bottom', label: 'Bottom' },
+        ],
+        defaultValue: 'center'
       }
     ]
   },
@@ -146,7 +111,19 @@ export const customSettingsConfig: CustomSettingsMap = {
           { value: 'h4', label: 'H4 - Minor Heading' },
           { value: 'h5', label: 'H5 - Small Heading' },
           { value: 'h6', label: 'H6 - Tiny Heading' },
-        ]
+        ],
+        defaultValue: 'h2'
+      },
+      {
+        id: 'animation',
+        label: 'Animation',
+        type: 'select',
+        options: [
+          { value: 'none', label: 'None' },
+          { value: 'fade-in', label: 'Fade In' },
+          { value: 'slide-up', label: 'Slide Up' },
+        ],
+        defaultValue: 'none'
       }
     ]
   },
@@ -212,6 +189,21 @@ export const customSettingsConfig: CustomSettingsMap = {
           { value: 'outline', label: 'Outline' },
           { value: 'ghost', label: 'Ghost' }
         ]
+      },
+      {
+        id: 'size',
+        label: 'Size',
+        type: 'select',
+        options: [
+          { value: 'sm', label: 'Small' },
+          { value: 'md', label: 'Medium' },
+          { value: 'lg', label: 'Large' }
+        ]
+      },
+      {
+        id: 'fullWidth',
+        label: 'Full Width',
+        type: 'checkbox'
       }
     ]
   },
@@ -491,6 +483,36 @@ export const CustomSettings: React.FC<CustomSettingsProps> = ({
             </SelectContent>
           </Select>
         </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="size">Size</Label>
+          <Select
+            value={(element.customSettings?.size as string) || 'md'}
+            onValueChange={(value) => {
+              onCustomSettingChange('size', value);
+            }}
+          >
+            <SelectTrigger id="size">
+              <SelectValue placeholder="Select size" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sm">Small</SelectItem>
+              <SelectItem value="md">Medium</SelectItem>
+              <SelectItem value="lg">Large</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="flex items-center gap-2 mt-2">
+          <input
+            type="checkbox"
+            id="fullWidth"
+            checked={!!element.customSettings?.fullWidth}
+            onChange={(e) => onCustomSettingChange('fullWidth', e.target.checked)}
+            className="mr-2"
+          />
+          <Label htmlFor="fullWidth" className="cursor-pointer">Full Width</Label>
+        </div>
       </div>
     );
   }
@@ -521,48 +543,56 @@ export const CustomSettings: React.FC<CustomSettingsProps> = ({
         </div>
         
         <div className="grid gap-2">
-          <Label htmlFor="heroHeight">Section Height</Label>
+          <Label htmlFor="backgroundPosition">Background Position</Label>
           <Select
-            value={(element.customSettings?.heroHeight as string) || '500px'}
+            value={(element.customSettings?.backgroundPosition as string) || 'center'}
             onValueChange={(value) => {
-              onCustomSettingChange('heroHeight', value);
+              onCustomSettingChange('backgroundPosition', value);
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select height" />
+              <SelectValue placeholder="Select position" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="500px">Medium (500px)</SelectItem>
-              <SelectItem value="100vh">Full Screen</SelectItem>
-              <SelectItem value="400px">Small (400px)</SelectItem>
-              <SelectItem value="600px">Large (600px)</SelectItem>
+              <SelectItem value="center">Center</SelectItem>
+              <SelectItem value="top">Top</SelectItem>
+              <SelectItem value="bottom">Bottom</SelectItem>
             </SelectContent>
           </Select>
         </div>
         
         <div className="grid gap-2">
           <Label htmlFor="overlayColor">Overlay Color</Label>
-          <Input
-            id="overlayColor"
-            type="color"
-            value={(element.customSettings?.overlayColor as string) || 'rgba(0,0,0,0.5)'}
-            onChange={(e) => {
-              onCustomSettingChange('overlayColor', e.target.value);
-            }}
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              id="overlayColor"
+              value={element.customSettings?.overlayColor as string || '#000000'}
+              onChange={(e) => onCustomSettingChange('overlayColor', e.target.value)}
+              className="w-10 h-10 p-1 cursor-pointer border rounded"
+            />
+            <Input
+              value={element.customSettings?.overlayColor as string || 'rgba(0,0,0,0.5)'}
+              onChange={(e) => onCustomSettingChange('overlayColor', e.target.value)}
+              placeholder="rgba(0,0,0,0.5)"
+            />
+          </div>
         </div>
         
         <div className="grid gap-2">
-          <Label htmlFor="overlayOpacity">Overlay Opacity (%)</Label>
-          <Input
+          <div className="flex justify-between items-center">
+            <Label htmlFor="overlayOpacity">Overlay Opacity</Label>
+            <span className="text-sm">{element.customSettings?.overlayOpacity as number || 50}%</span>
+          </div>
+          <input
+            type="range"
             id="overlayOpacity"
-            type="number"
             min="0"
             max="100"
-            value={(element.customSettings?.overlayOpacity as string) || '50'}
-            onChange={(e) => {
-              onCustomSettingChange('overlayOpacity', e.target.value);
-            }}
+            step="1"
+            value={element.customSettings?.overlayOpacity as number || 50}
+            onChange={(e) => onCustomSettingChange('overlayOpacity', parseInt(e.target.value))}
+            className="w-full"
           />
         </div>
         
@@ -993,6 +1023,25 @@ export const CustomSettings: React.FC<CustomSettingsProps> = ({
               <SelectItem value="h4">H4 - Minor Heading</SelectItem>
               <SelectItem value="h5">H5 - Small Heading</SelectItem>
               <SelectItem value="h6">H6 - Tiny Heading</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="animation">Animation</Label>
+          <Select
+            value={(element.customSettings?.animation as string) || 'none'}
+            onValueChange={(value) => {
+              onCustomSettingChange('animation', value);
+            }}
+          >
+            <SelectTrigger id="animation">
+              <SelectValue placeholder="Select animation" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              <SelectItem value="fade-in">Fade In</SelectItem>
+              <SelectItem value="slide-up">Slide Up</SelectItem>
             </SelectContent>
           </Select>
         </div>

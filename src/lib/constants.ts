@@ -1,25 +1,8 @@
 export type EditorBtns = 
-  | 'text'
   | 'container'
-  | 'section'
-  | 'contactForm'
-  | 'paymentForm'
-  | 'link'
-  | '2Col'
-  | 'video'
-  | '__body'
-  | 'image'
-  | null
-  | '3Col'
   |'button'
   |'image'
-  |'divider'
-  | 'spacer'
-  | 'badge'
-  | 'icon'
-  | 'productCard'
-  | 'multiColumn'
-  | 'grid'
+  | '__body'
   | 'heroSection'
   | 'heading'
   | 'navItem'
@@ -29,4 +12,5 @@ export type EditorBtns =
   | 'form'
   | 'input'
   | 'logo'
-
+  | null
+  

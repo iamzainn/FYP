@@ -3,20 +3,41 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { EditorBtns } from "@/lib/constants"
 import React from "react"
-import { LayoutTemplate,  MenuIcon } from "lucide-react"
+import { LayoutTemplate, MenuIcon } from "lucide-react"
 import { ComponentConfigs } from '@/lib/ComponentConfiguration'
+import { componentRegistry } from '@/lib/ComponentSystem/Core/registry';
+
+// Import the HeroSection component to ensure it's registered
+import '@/lib/ComponentSystem/Core/components/HeroSection';
+
+
 
 const HeaderPlaceholder = () => {
   const handleDragStart = (e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('componentType', type)
     
+    // Try to use the registry first
+    const componentInfo = componentRegistry.getComponent(type);
+    if (componentInfo) {
+      try {
+        const newElement = componentRegistry.createInstance(type);
+        console.log(`Creating new ${type} from registry:`, newElement);
+        e.dataTransfer.setData('componentData', JSON.stringify(newElement));
+        return;
+      } catch (error) {
+        console.error(`Error creating ${type} from registry:`, error);
+        // Fall back to old system if registry fails
+      }
+    }
+    
+    // Fall back to old configuration system
     if (type in ComponentConfigs) {
       try {
         const newElement = ComponentConfigs[type].create()
-        console.log("Creating new header for drag:", newElement)
+        console.log(`Creating new ${type} from config:`, newElement)
         e.dataTransfer.setData('componentData', JSON.stringify(newElement))
       } catch (error) {
-        console.error("Error creating component data:", error)
+        console.error(`Error creating ${type} from config:`, error)
       }
     } else {
       console.warn(`No configuration found for component type: ${type}`)
@@ -41,13 +62,28 @@ const HeroSectionPlaceholder = () => {
   const handleDragStart = (e: React.DragEvent, type: string) => {
     e.dataTransfer.setData('componentType', type)
     
+    // Try to use the registry first
+    const componentInfo = componentRegistry.getComponent(type);
+    if (componentInfo) {
+      try {
+        const newElement = componentRegistry.createInstance(type);
+        console.log(`Creating new ${type} from registry:`, newElement);
+        e.dataTransfer.setData('componentData', JSON.stringify(newElement));
+        return;
+      } catch (error) {
+        console.error(`Error creating ${type} from registry:`, error);
+        // Fall back to old system if registry fails
+      }
+    }
+    
+    // Fall back to old configuration system
     if (type in ComponentConfigs) {
       try {
         const newElement = ComponentConfigs[type].create()
-        console.log("Creating new hero section for drag:", newElement)
+        console.log(`Creating new ${type} from config:`, newElement)
         e.dataTransfer.setData('componentData', JSON.stringify(newElement))
       } catch (error) {
-        console.error("Error creating component data:", error)
+        console.error(`Error creating ${type} from config:`, error)
       }
     } else {
       console.warn(`No configuration found for component type: ${type}`)
@@ -87,21 +123,6 @@ const ComponentsTab = () => {
       id: 'header',
       group: 'layout',
     },
-   
-   
-   
-   
-
-
-
-
-
-
-
-
-    
-   
-   
   ]
 
   return (

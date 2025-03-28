@@ -15,7 +15,7 @@ const LogoComponent = ({ element }: LogoComponentProps) => {
   const { state } = useEditor()
   
   // Get responsive styles from our custom hook
-  const { computedStyles, currentDevice } = useResponsiveStyles(element, state)
+  const { computedStyles } = useResponsiveStyles(element, state)
   
   // Check if we're in mobile view for potential mobile-specific styling
  

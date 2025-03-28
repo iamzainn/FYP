@@ -94,11 +94,11 @@ const Container = ({ element }: ContainerProps) => {
     <div
       style={styles}
       className={clsx('relative transition-all group', {
-        'max-w-full w-full': type === 'container' || type === '2Col',
+        'max-w-full w-full': type === 'container',
         'h-fit': type === 'container',
         'h-full': type === '__body',
         'overflow-scroll': type === '__body',
-        'flex flex-col md:!flex-row gap-4': type === '2Col',
+        
         '!border-blue-500': 
           state.editor.selectedElement.id === id && 
           !state.editor.liveMode && 

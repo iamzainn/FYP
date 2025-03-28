@@ -5,6 +5,7 @@ import React, { useMemo } from 'react'
 import clsx from 'clsx'
 import Recursive from '../../recursive'
 import ComponentWrapper from '../../ComponentWrapper'
+import { createContainerComponent } from '@/lib/ComponentSystem/factories/createContainerComponent'
 
 interface HeroSectionProps {
   element: EditorElement

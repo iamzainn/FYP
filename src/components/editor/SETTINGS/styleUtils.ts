@@ -1,4 +1,5 @@
 import { EditorElement } from '@/providers/editor/editor-provider'
+import { CSSProperties } from 'react';
 
 type DeviceType = 'Desktop' | 'Tablet' | 'Mobile'
 
@@ -13,7 +14,7 @@ export function getResponsiveValue(
 ): string | number | undefined {
   // For Desktop, just return the base style
   if (currentDevice === 'Desktop') {
-    return element.styles[property];
+    return element.styles[property as keyof CSSProperties];
   }
   
   // For Tablet or Mobile, check device-specific styles first
@@ -22,11 +23,11 @@ export function getResponsiveValue(
   if (
     element.responsiveSettings && 
     element.responsiveSettings[deviceKey] && 
-    element.responsiveSettings[deviceKey][property] !== undefined
+    element.responsiveSettings[deviceKey][property as keyof CSSProperties] !== undefined
   ) {
-    return element.responsiveSettings[deviceKey][property];
+    return element.responsiveSettings[deviceKey][property as keyof CSSProperties];
   }
   
   // Fall back to base style if not found in device-specific styles
-  return element.styles[property];
+  return element.styles[property as keyof CSSProperties];
 } 

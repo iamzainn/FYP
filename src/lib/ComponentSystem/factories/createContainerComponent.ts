@@ -6,11 +6,14 @@
 import React from 'react';
 import { BaseComponentProps, EditorComponentHelpers, ComponentChildrenConfig, ComponentSettingDefinition, StyleFieldDefinition } from '../Core/types';
 import { withEditorComponent } from '../Core/HOC/withEditorComponent';
-import { createComponentConfig } from './createComponentConfig';
 import { componentRegistry } from '../Core/registry';
+import { createComponentConfig } from './createComponentConfig';
 import { EditorElement } from '@/providers/editor/editor-provider';
 
-interface ContainerComponentConfig {
+console.log('📦 createContainerComponent.ts loading');
+console.log('📦 Importing createComponentConfig:', { createComponentConfig });
+
+export interface ContainerComponentConfig {
   type: string;
   name: string;
   category?: 'layout' | 'elements' | 'compound';
@@ -38,6 +41,17 @@ interface ContainerComponentConfig {
  * Creates a container component that can have children
  */
 export function createContainerComponent(config: ContainerComponentConfig) {
+  console.log(`Creating container component: ${config.type}`);
+  
+  // Add safety check
+  if (typeof createComponentConfig !== 'function') {
+    console.error('createComponentConfig is not a function in createContainerComponent!',
+      { createComponentConfig });
+    throw new Error('Component system initialization error: createComponentConfig is not available');
+  }
+  
+  console.log('🏗️ createContainerComponent called for:', config?.type);
+  
   // Create the base container component
   const ContainerComponent = (props: BaseComponentProps & EditorComponentHelpers) => {
     const { element, renderChild } = props;
@@ -65,6 +79,9 @@ export function createContainerComponent(config: ContainerComponentConfig) {
       childrenContainer: React.createElement(ChildrenContainer, null)
     });
   };
+  
+  // Add before the line that causes the error
+  console.log('⚠️ Before componentConfig = createComponentConfig. createComponentConfig is:', createComponentConfig);
   
   // Generate the component config
   const componentConfig = createComponentConfig({

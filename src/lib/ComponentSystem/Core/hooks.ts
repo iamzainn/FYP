@@ -77,12 +77,7 @@ export const useEditorComponentHelpers = (element: EditorElement) => {
   // Debug info about responsive behavior
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.debug(
-        `Component ${element.id} (${element.name}): ` +
-        `Mode: ${liveMode ? 'Live' : previewMode ? 'Preview' : 'Edit'}, ` +
-        `Device: ${currentDevice}, ` +
-        `Window width: ${windowWidth}px`
-      );
+     
     }
   }, [element.id, element.name, liveMode, previewMode, currentDevice, windowWidth]);
   

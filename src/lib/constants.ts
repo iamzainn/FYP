@@ -12,5 +12,7 @@ export type EditorBtns =
   | 'form'
   | 'input'
   | 'logo'
+  | 'headerSection'
+  | 'headerActions'
   | null
   

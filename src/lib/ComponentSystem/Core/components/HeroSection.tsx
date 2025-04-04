@@ -1,5 +1,5 @@
 import React from 'react';
-import { createContainerComponent } from '../../factories/createContainerComponent';
+import { createContainerComponent } from '@/lib/ComponentSystem/bootstrap';
 import { v4 as uuid } from 'uuid';
 
 export const HeroSectionComponent = createContainerComponent({

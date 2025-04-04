@@ -6,10 +6,13 @@
 import React from 'react';
 import { BaseComponentProps, EditorComponentHelpers, ComponentSettingDefinition, ContentFieldDefinition, StyleFieldDefinition } from '../Core/types';
 import { withEditorComponent } from '../Core/HOC/withEditorComponent';
-import { createComponentConfig } from './createComponentConfig';
 import { componentRegistry } from '../Core/registry';
+import { createComponentConfig } from './createComponentConfig';
 
-interface LeafComponentConfig {
+console.log('📦 createLeafComponent.ts loading');
+console.log('📦 Importing createComponentConfig:', { createComponentConfig });
+
+ export interface LeafComponentConfig {
   type: string;
   name: string;
   category?: 'layout' | 'elements' | 'compound';
@@ -34,7 +37,9 @@ interface LeafComponentConfig {
  * Creates a leaf component (without children)
  */
 export function createLeafComponent(config: LeafComponentConfig) {
-  // Create the base component that just renders using the provided function
+  console.log(`Creating leaf component: ${config.type}`);
+  
+  // Create the component
   const LeafComponent = (props: BaseComponentProps & EditorComponentHelpers) => {
     return config.render(props);
   };
@@ -56,7 +61,7 @@ export function createLeafComponent(config: LeafComponentConfig) {
   // Enhance with editor component behavior
   const EnhancedComponent = withEditorComponent(LeafComponent, componentConfig);
   
-  // Register the component in the registry
+  // Register the component
   componentRegistry.registerComponent(componentConfig, EnhancedComponent);
   
   // Return the enhanced component

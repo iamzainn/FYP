@@ -2,94 +2,41 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { EditorBtns } from "@/lib/constants"
-import React from "react"
-import { LayoutTemplate, MenuIcon } from "lucide-react"
-import { ComponentConfigs } from '@/lib/ComponentConfiguration'
+import React, { useEffect } from "react"
+import { LayoutTemplate, Menu } from "lucide-react"
+
 import { componentRegistry } from '@/lib/ComponentSystem/Core/registry';
+import { registerAllComponents } from '@/lib/ComponentSystem/Core/components';
+import { initializeComponentSystem } from '@/lib/ComponentSystem/bootstrap';
 
-// Import the HeroSection component to ensure it's registered
 import '@/lib/ComponentSystem/Core/components/HeroSection';
+import '@/lib/ComponentSystem/Core/components/HeaderSection';
+import '@/lib/ComponentSystem/Core/components/Navigation';
+import '@/lib/ComponentSystem/Core/components/NavigationItem';
+import '@/lib/ComponentSystem/Core/components/Logo';
+import '@/lib/ComponentSystem/Core/components/HeaderActions';
 
-
-
-const HeaderPlaceholder = () => {
-  const handleDragStart = (e: React.DragEvent, type: string) => {
-    e.dataTransfer.setData('componentType', type)
-    
-    // Try to use the registry first
-    const componentInfo = componentRegistry.getComponent(type);
-    if (componentInfo) {
-      try {
-        const newElement = componentRegistry.createInstance(type);
-        console.log(`Creating new ${type} from registry:`, newElement);
-        e.dataTransfer.setData('componentData', JSON.stringify(newElement));
-        return;
-      } catch (error) {
-        console.error(`Error creating ${type} from registry:`, error);
-        // Fall back to old system if registry fails
-      }
-    }
-    
-    // Fall back to old configuration system
-    if (type in ComponentConfigs) {
-      try {
-        const newElement = ComponentConfigs[type].create()
-        console.log(`Creating new ${type} from config:`, newElement)
-        e.dataTransfer.setData('componentData', JSON.stringify(newElement))
-      } catch (error) {
-        console.error(`Error creating ${type} from config:`, error)
-      }
-    } else {
-      console.warn(`No configuration found for component type: ${type}`)
+// Generic handler for component dragging
+const handleDragStart = (e: React.DragEvent, type: string) => {
+  e.dataTransfer.setData('componentType', type)
+  
+  // Try to use the registry first
+  const componentInfo = componentRegistry.getComponent(type);
+  if (componentInfo) {
+    try {
+      const newElement = componentRegistry.createInstance(type);
+      console.log(`Creating new ${type} from registry:`, newElement);
+      e.dataTransfer.setData('componentData', JSON.stringify(newElement));
+      return;
+    } catch (error) {
+      console.error(`Error creating ${type} from registry:`, error);
+      // Fall back to old system if registry fails
     }
   }
-  
-  return (
-    <div
-      draggable
-      onDragStart={(e) => handleDragStart(e, 'header')}
-      className="h-14 w-full border-[1px] border-dashed rounded-lg flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-grab"
-    >
-      <div className="flex flex-col items-center gap-1">
-        <MenuIcon className="h-6 w-6 text-slate-500" />
-        <p className="text-xs">Header</p>
-      </div>
-    </div>
-  )
 }
 
+// Hero Section placeholder
 const HeroSectionPlaceholder = () => {
-  const handleDragStart = (e: React.DragEvent, type: string) => {
-    e.dataTransfer.setData('componentType', type)
-    
-    // Try to use the registry first
-    const componentInfo = componentRegistry.getComponent(type);
-    if (componentInfo) {
-      try {
-        const newElement = componentRegistry.createInstance(type);
-        console.log(`Creating new ${type} from registry:`, newElement);
-        e.dataTransfer.setData('componentData', JSON.stringify(newElement));
-        return;
-      } catch (error) {
-        console.error(`Error creating ${type} from registry:`, error);
-        // Fall back to old system if registry fails
-      }
-    }
-    
-    // Fall back to old configuration system
-    if (type in ComponentConfigs) {
-      try {
-        const newElement = ComponentConfigs[type].create()
-        console.log(`Creating new ${type} from config:`, newElement)
-        e.dataTransfer.setData('componentData', JSON.stringify(newElement))
-      } catch (error) {
-        console.error(`Error creating ${type} from config:`, error)
-      }
-    } else {
-      console.warn(`No configuration found for component type: ${type}`)
-    }
-  }
-  
   return (
     <div
       draggable
@@ -104,7 +51,30 @@ const HeroSectionPlaceholder = () => {
   )
 }
 
+// Header Section placeholder
+const HeaderSectionPlaceholder = () => {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => handleDragStart(e, 'headerSection')}
+      className="h-14 w-full border-[1px] border-dashed rounded-lg flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-grab"
+    >
+      <div className="flex flex-col items-center gap-1">
+        <Menu className="h-6 w-6 text-slate-500" />
+        <p className="text-xs">Header Section</p>
+      </div>
+    </div>
+  )
+}
+
 const ComponentsTab = () => {
+  useEffect(() => {
+    // Initialize system first
+    initializeComponentSystem();
+    // Then register all components
+    registerAllComponents();
+  }, []);
+
   const elements: {
     Component: React.ReactNode
     label: string
@@ -118,9 +88,9 @@ const ComponentsTab = () => {
       group: 'layout',
     },
     {
-      Component: <HeaderPlaceholder />,
-      label: 'Header',
-      id: 'header',
+      Component: <HeaderSectionPlaceholder />,
+      label: 'Header Section',
+      id: 'headerSection',
       group: 'layout',
     },
   ]

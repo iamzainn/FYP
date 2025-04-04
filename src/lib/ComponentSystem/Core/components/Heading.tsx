@@ -1,5 +1,9 @@
 import React from 'react';
 import { createLeafComponent } from '../../factories/createLeafComponent';
+import { createComponentConfig } from '../../factories/createComponentConfig';
+
+// Ensure the module is fully initialized before using
+console.log('Heading.tsx: createComponentConfig available:', !!createComponentConfig);
 
 export const HeadingComponent = createLeafComponent({
   type: 'heading',

@@ -1,5 +1,5 @@
-import React from 'react';
 import { createLeafComponent } from '../../factories/createLeafComponent';
+import React from 'react';
 
 export const ButtonComponent = createLeafComponent({
   type: 'button',

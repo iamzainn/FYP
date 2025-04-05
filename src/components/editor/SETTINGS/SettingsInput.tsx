@@ -1,12 +1,15 @@
 import { Minus, Plus } from 'lucide-react'
 import React from 'react'
 import { Label } from '@/components/ui/label'
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Slider } from '@/components/ui/slider'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select'
 
 // Define types for the style units
@@ -27,17 +30,19 @@ export const availableUnits: StyleUnit[] = [
 interface BaseInputProps {
   id: string;
   label: string;
-  value: string | number;
+  value: string | number | boolean;
   placeholder?: string;
-  onChange: (id: string, value: string | number) => void;
+  onChange: (id: string, value: string | number | boolean) => void;
 }
 
 // Input with units (for dimensions, margins, etc.)
-interface UnitInputProps extends BaseInputProps {
-  unit: StyleUnit['value'];
-  onUnitChange: (unit: StyleUnit['value']) => void;
-  min?: number;
-  max?: number;
+interface UnitInputProps extends Omit<BaseInputProps, 'value' | 'onChange'> {
+    value: string | number;
+    unit: StyleUnit['value'];
+    onUnitChange: (unit: StyleUnit['value']) => void;
+    min?: number;
+    max?: number;
+    onChange: (id: string, value: string | number) => void;
 }
 
 export const UnitInput: React.FC<UnitInputProps> = ({
@@ -117,8 +122,8 @@ export const UnitInput: React.FC<UnitInputProps> = ({
 };
 
 // Color input component
-interface ColorInputProps extends BaseInputProps {
-  showOpacity?: boolean;
+interface ColorInputProps extends Omit<BaseInputProps, 'value'> {
+    value: string;
 }
 
 export const ColorInput: React.FC<ColorInputProps> = ({
@@ -152,9 +157,10 @@ export const ColorInput: React.FC<ColorInputProps> = ({
   );
 };
 
-// Select input component
-interface SelectInputProps extends BaseInputProps {
-  options: { value: string; label: string }[];
+// Select input component: Update options type and handle value conversion
+interface SelectInputProps extends Omit<BaseInputProps, 'value'> {
+  value: string | number | boolean;
+  options: { value: string | number | boolean; label: string }[];
 }
 
 export const SelectInput: React.FC<SelectInputProps> = ({
@@ -164,12 +170,18 @@ export const SelectInput: React.FC<SelectInputProps> = ({
   options,
   onChange
 }) => {
+  // Convert the current value to string for the Select component
+  const stringValue = String(value ?? '');
+
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id} className="text-muted-foreground">{label}</Label>
       <Select 
-        value={value as string} 
-        onValueChange={(val) => onChange(id, val)}
+        value={stringValue} 
+        onValueChange={(val) => {
+            const selectedOption = options.find(opt => String(opt.value) === val);
+            onChange(id, selectedOption ? selectedOption.value : val);
+        }}
       >
         <SelectTrigger id={id}>
           <SelectValue placeholder="Select..." />
@@ -177,8 +189,8 @@ export const SelectInput: React.FC<SelectInputProps> = ({
         <SelectContent>
           {options.map(option => (
             <SelectItem 
-              key={option.value} 
-              value={option.value}
+              key={String(option.value)}
+              value={String(option.value)}
             >
               {option.label}
             </SelectItem>
@@ -189,8 +201,11 @@ export const SelectInput: React.FC<SelectInputProps> = ({
   );
 };
 
-// Text input component
-export const TextInput: React.FC<BaseInputProps> = ({
+// Text input component (ensure value is treated as string)
+interface TextInputProps extends Omit<BaseInputProps, 'value'> {
+    value: string;
+}
+export const TextInput: React.FC<TextInputProps> = ({
   id,
   label,
   value,
@@ -200,9 +215,9 @@ export const TextInput: React.FC<BaseInputProps> = ({
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id} className="text-muted-foreground">{label}</Label>
-      <input
+      <Input
         id={id}
-        value={value as string}
+        value={value || ''}
         onChange={(e) => onChange(id, e.target.value)}
         className="border p-2 rounded-md"
         placeholder={placeholder}
@@ -232,6 +247,128 @@ export const ButtonInput: React.FC<ButtonInputProps> = ({
       >
         {label}
       </button>
+    </div>
+  );
+};
+
+// --- NEW COMPONENTS ---
+
+// Number Input Component
+interface NumberInputProps extends Omit<BaseInputProps, 'value' | 'placeholder'> {
+  value?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  placeholder?: string;
+}
+
+export const NumberInput: React.FC<NumberInputProps> = ({
+  id,
+  label,
+  value,
+  min,
+  max,
+  step,
+  placeholder,
+  onChange
+}) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const rawValue = e.target.value;
+      const num = rawValue === '' ? 0 : parseFloat(rawValue);
+      if (!isNaN(num)) {
+         onChange(id, num);
+      }
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id} className="text-muted-foreground">{label}</Label>
+      <Input
+        id={id}
+        type="number"
+        value={value ?? ''}
+        onChange={handleChange}
+        min={min}
+        max={max}
+        step={step}
+        placeholder={placeholder}
+        className="border p-2 rounded-md"
+      />
+    </div>
+  );
+};
+
+// Range Input Component (Slider)
+interface RangeInputProps extends Omit<BaseInputProps, 'value'> {
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+}
+
+export const RangeInput: React.FC<RangeInputProps> = ({
+  id,
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange
+}) => {
+  // Slider component expects value in an array
+  const sliderValue = [value ?? min];
+
+  const handleSliderChange = (newValue: number[]) => {
+    onChange(id, newValue[0]);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+       <div className="flex justify-between items-center">
+         <Label htmlFor={id} className="text-muted-foreground">{label}</Label>
+         <span className="text-sm text-muted-foreground">{value}</span>
+       </div>
+      <Slider
+        id={id}
+        min={min}
+        max={max}
+        step={step}
+        value={sliderValue}
+        onValueChange={handleSliderChange}
+        className="w-full"
+      />
+    </div>
+  );
+};
+
+// Checkbox Input Component
+interface CheckboxInputProps extends Omit<BaseInputProps, 'value'> {
+  checked: boolean;
+}
+
+export const CheckboxInput: React.FC<CheckboxInputProps> = ({
+  id,
+  label,
+  checked,
+  onChange
+}) => {
+  return (
+    <div className="flex items-center space-x-2">
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(isChecked: boolean | 'indeterminate') => {
+            if (typeof isChecked === 'boolean') {
+              onChange(id, isChecked)
+            }
+        }}
+      />
+      <Label
+        htmlFor={id}
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      >
+        {label}
+      </Label>
     </div>
   );
 };

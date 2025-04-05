@@ -2,7 +2,7 @@
 
 "use client"
 
-import { EditorElement, useEditor } from "@/providers/editor/editor-provider"
+import {  useEditor } from "@/providers/editor/editor-provider"
 import {
   Accordion,
   AccordionContent,
@@ -17,13 +17,21 @@ import { DecorationsSettings } from './SETTINGS/DecorationSettings'
 import { CustomSettings } from './SETTINGS/CustomSettings'
 import { Trash } from "lucide-react"
 import { useState } from "react"
+import { componentRegistry } from '@/lib/ComponentSystem/Core/registry'
+import { ComponentConfig } from "@/lib/ComponentSystem/Core/types"
+
 
 const SettingsTab = () => {
   const { state, dispatch } = useEditor()
-  const [activeSection, setActiveSection] = useState<string[]>(['typography', 'decorations', 'dimensions', 'custom'])
+  const [activeSection, setActiveSection] = useState<string[]>(['typography', 'decorations', 'dimensions', 'custom', 'content'])
   const selectedElement = state.editor.selectedElement
   const currentDevice = state.editor.device
   
+  const componentDef = selectedElement?.type
+    ? componentRegistry.getComponent(selectedElement.type as string)
+    : undefined
+  const componentConfig: ComponentConfig | undefined = componentDef?.config
+
   console.log("selectedElement:", selectedElement)
   console.log("Current device:", currentDevice)
 
@@ -75,27 +83,129 @@ const SettingsTab = () => {
     }
   }
 
+  // Update the handleChangeCustomValues function for atomic update
   const handleChangeCustomValues = (property: string, value: string | number | boolean | any[]) => {
-    dispatch({
-      type: 'UPDATE_ELEMENT',
-      payload: {
-        elementDetails: {
-          ...selectedElement,
-          customSettings: {
-            ...(selectedElement.customSettings || {}),
-            [property]: value,
-          },
-        },
-      },
-    })
-  }
+    if (!componentConfig || !selectedElement) {
+        console.warn("Cannot handle custom value change: Missing component config or selected element.");
+        return;
+    }
 
-  const handleUpdateElement = (element: EditorElement) => {
+    console.log(`%c[Settings Update - ATOMIC] Starting: ${property} = ${JSON.stringify(value)}`, 'color: blue; font-weight: bold;');
+
+    const settingDefinition = componentConfig.customSettingFields?.find(
+      (field) => field.id === property
+    );
+
+    if (!settingDefinition) {
+        console.warn(`[Settings Update - ATOMIC] Setting definition not found for: ${property}`);
+        return;
+    }
+
+    // --- 1. Create a deep clone of the selected element ---
+    const elementClone = (selectedElement);
+    console.log(`%c[Settings Update - ATOMIC] Created deep clone of element ${elementClone.id}`, 'color: teal;');
+
+    // --- 2. Calculate and apply PARENT style overrides to the clone ---
+    if (settingDefinition.affectsStyles) {
+        console.log(`%c[Settings Update - ATOMIC] Calculating PARENT style overrides for ${property}...`, 'color: green;');
+        let parentStyleOverrides: React.CSSProperties = {};
+        for (const styleEffect of settingDefinition.affectsStyles) {
+            const { property: styleProp, valueMap, transform } = styleEffect;
+            let styleValueToApply = value;
+            if (valueMap && (typeof value === 'string' || typeof value === 'number') && value in valueMap) {
+                styleValueToApply = valueMap[value];
+            } else if (transform && typeof transform === 'function') {
+                styleValueToApply = transform(value);
+            }
+            if (styleProp) {
+                parentStyleOverrides = { ...parentStyleOverrides, [styleProp]: styleValueToApply as any };
+            }
+        }
+        console.log(`%c[Settings Update - ATOMIC] Applying parent style overrides to clone:`, 'color: green;', parentStyleOverrides);
+        elementClone.styles = { ...(elementClone.styles || {}), ...parentStyleOverrides };
+    }
+
+    // --- 3. Apply the changed custom setting value to the clone ---
+    elementClone.customSettings = {
+        ...(elementClone.customSettings || {}),
+        [property]: value,
+    };
+    console.log(`%c[Settings Update - ATOMIC] Applied custom setting '${property}' to clone.`, 'color: teal;');
+
+    // --- 4. Calculate and apply CHILD modifications to the clone ---
+    if (settingDefinition.affectsChildren && Array.isArray(elementClone.content)) {
+        console.log(`%c[Settings Update - ATOMIC] Calculating CHILD updates for ${property}...`, 'color: orange;');
+        
+        // Modify the children array *within the clone*
+        elementClone.content = elementClone.content.map(child => {
+            let childModified = false;
+            // IMPORTANT: Clone the child *before* potentially modifying it within this loop iteration
+            // This prevents modifications bleeding over if multiple rules affect the same child type
+            const currentChildState = (child);
+
+            settingDefinition.affectsChildren?.forEach(childEffect => {
+                 if (child.type === childEffect.targetType) {
+                    const updateRules = childEffect.valueMap?.[value as string | number];
+                    if (updateRules) {
+                        console.log(`  - Child Rules Found: For value '${value}', target '${childEffect.targetType}', affecting child ${child.id}`);
+                        
+                        // Get current styles/settings *from the cloned child for this iteration*
+                        const currentChildStyles = currentChildState.styles || {};
+                        const currentChildSettings = currentChildState.customSettings || {};
+                        
+                        // Calculate potential new styles/settings based on the rule
+                        const newChildStyles = updateRules.styles
+                            ? { ...currentChildStyles, ...updateRules.styles } // Apply overrides
+                            : currentChildStyles;
+                        const newChildSettings = updateRules.customSettings
+                            ? { ...currentChildSettings, ...updateRules.customSettings } // Apply overrides
+                            : currentChildSettings;
+
+                        // Check if changes occurred compared to the child's state *before this rule*
+                        const stylesChanged = JSON.stringify(newChildStyles) !== JSON.stringify(currentChildStyles);
+                        const settingsChanged = JSON.stringify(newChildSettings) !== JSON.stringify(currentChildSettings);
+
+                        if (stylesChanged || settingsChanged) {
+                            console.log(`    * Change Detected for Child ${child.id}! Applying to child state for this update.`);
+                            if(stylesChanged) { 
+                                console.log(`      New Styles:`, newChildStyles);
+                                currentChildState.styles = newChildStyles; 
+                                childModified = true;
+                            }
+                            if(settingsChanged) { 
+                                console.log(`      New Settings:`, newChildSettings);
+                                currentChildState.customSettings = newChildSettings; 
+                                childModified = true;
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (!childModified) {
+                 console.log(`  - Child ${child.id} (${child.type}) was not modified by rules for '${property}=${value}'.`);
+            }
+            // Return the potentially modified state of the child for the new array
+            return currentChildState;
+        });
+
+        console.log(`%c[Settings Update - ATOMIC] Finished calculating child modifications for parent clone's content.`, 'color: orange;');
+    } else if (settingDefinition.affectsChildren) {
+        console.log(`%c[Settings Update - ATOMIC] Skipping child updates for ${property}: Element content is not an array.`, 'color: grey;');
+    }
+
+    // --- 5. Dispatch a SINGLE update with the modified parent clone ---
+    console.log(`%c[Settings Update - ATOMIC] Dispatching SINGLE update for element ${elementClone.id}...`, 'color: purple; font-weight: bold;');
+    console.log(`%c[Settings Update - ATOMIC] Final Payload:`, 'color: purple;', elementClone);
     dispatch({
-      type: 'UPDATE_ELEMENT',
-      payload: { elementDetails: element },
-    })
-  }
+        type: 'UPDATE_ELEMENT',
+        payload: { elementDetails: elementClone }, // Dispatch the fully modified clone
+    });
+    
+    console.log(`%c[Settings Update - ATOMIC] Finished: ${property}`, 'color: blue; font-weight: bold;');
+  };
+
+  
 
   const handleDeleteElement = () => {
     dispatch({
@@ -105,6 +215,29 @@ const SettingsTab = () => {
       },
     })
   }
+
+  // --- Content Change Handler (NEW) ---
+  const handleContentChange = (property: string, value: any) => {
+      if (!selectedElement) return;
+
+      // Ensure content is an object before updating
+      if (typeof selectedElement.content === 'object' && !Array.isArray(selectedElement.content)) {
+            dispatch({
+                type: 'UPDATE_ELEMENT',
+                payload: {
+                    elementDetails: {
+                        ...selectedElement,
+                        content: {
+                            ...selectedElement.content,
+                            [property]: value,
+                        }
+                    }
+                }
+            });
+      } else {
+           console.warn(`Cannot update content property '${property}' for element ${selectedElement.id} - content is not an object.`);
+      }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -178,7 +311,7 @@ const SettingsTab = () => {
           </AccordionContent>
         </AccordionItem>
 
-        {(selectedElement.type === 'container') && (
+        {(selectedElement.type === 'container' || componentConfig?.styles?.display === 'flex') && (
           <AccordionItem value="flexbox" className="border-b">
             <AccordionTrigger className="py-2 text-sm hover:no-underline">
               Flexbox
@@ -262,21 +395,24 @@ const SettingsTab = () => {
 
         
 
-        {selectedElement.type && (
+        {/* Combined Content & Custom Settings Section */}
+        {/* Render if either content fields OR custom setting fields exist */}
+        {(componentConfig?.contentFields?.length || 0) > 0 || (componentConfig?.customSettingFields?.length || 0) > 0 ? (
           <AccordionItem value="custom" className="border-b">
             <AccordionTrigger className="py-2 text-sm hover:no-underline">
-              Element Settings
+               Content & Settings {/* Combined Trigger Name */}
             </AccordionTrigger>
             <AccordionContent className="pb-2">
+              {/* Pass the new onContentChange prop */}
               <CustomSettings
                 element={selectedElement}
-                customSettings={selectedElement.customSettings || {}}
+                customSettings={selectedElement.customSettings}
+                onContentChange={handleContentChange} // Pass the handler
                 onCustomSettingChange={handleChangeCustomValues}
-                handleUpdateElement={handleUpdateElement}
               />
-          </AccordionContent>
-        </AccordionItem>
-        )}
+            </AccordionContent>
+          </AccordionItem>
+        ) : null}
       </Accordion>
       </div>
     </div>

@@ -1,17 +1,16 @@
 import React from 'react';
-import { createLeafComponent } from '../../factories/createLeafComponent';
-import { createComponentConfig } from '../../factories/createComponentConfig';
+import { createLeafComponent, LeafComponentConfig } from '../../factories/createLeafComponent';
+import { ContentFieldDefinition, ComponentSettingDefinition, BaseComponentProps, EditorComponentHelpers } from '../types';
 
-// Ensure the module is fully initialized before using
-console.log('Heading.tsx: createComponentConfig available:', !!createComponentConfig);
-
-export const HeadingComponent = createLeafComponent({
+// Use LeafComponentConfig and add inlineTextEditField
+const headingConfig: LeafComponentConfig = {
   type: 'heading',
   name: 'Heading',
   category: 'elements',
+  inlineTextEditField: 'innerText', // Enable inline editing for 'innerText'
   
-  // Default styles
-  defaultStyles: {
+  // Default values applied when creating an instance
+  styles: {
     color: '#ffffff',
     fontSize: '2.5rem',
     fontWeight: 'bold',
@@ -24,9 +23,32 @@ export const HeadingComponent = createLeafComponent({
     fontFamily: 'inherit',
     letterSpacing: 'normal',
     boxSizing: 'border-box',
+    zIndex: '2',
   },
   
-  // Content fields
+  // Use 'content' for default content values
+  content: {
+    innerText: 'Build Beautiful Websites Without Code'
+  },
+  
+  // Use 'customSettings' for default setting values
+  customSettings: {
+    variant: 'h1',
+    animation: 'none'
+  },
+  
+  responsiveSettings: {
+    mobile: {
+      fontSize: '1.75rem',
+      marginBottom: '0.75rem',
+    },
+    tablet: {
+      fontSize: '2rem',
+      marginBottom: '1rem',
+    }
+  },
+  
+  // Definitions for the editor controls
   contentFields: [
     {
       id: 'innerText',
@@ -34,15 +56,9 @@ export const HeadingComponent = createLeafComponent({
       type: 'text',
       defaultValue: 'Build Beautiful Websites Without Code'
     }
-  ],
+  ] as ContentFieldDefinition[],
   
-  // Default content
-  defaultContent: {
-    innerText: 'Build Beautiful Websites Without Code'
-  },
-  
-  // Custom settings
-  customSettings: [
+  customSettingFields: [
     {
       id: 'variant',
       label: 'Heading Type',
@@ -55,78 +71,46 @@ export const HeadingComponent = createLeafComponent({
       ],
       defaultValue: 'h1'
     },
-    {
-      id: 'animation',
-      label: 'Animation',
-      type: 'select',
-      options: [
-        { value: 'none', label: 'None' },
-        { value: 'fade-in', label: 'Fade In' },
-        { value: 'slide-up', label: 'Slide Up' },
-      ],
-      defaultValue: 'none'
-    }
-  ],
-  
-  // Default custom settings
-  defaultCustomSettings: {
-    variant: 'h1',
-    animation: 'none'
-  },
-  
-  // The rendering function
-  render: (props) => {
-    const { 
-      styles, 
-      getContentValue, 
-      getCustomSetting, 
-      device,
-      isLiveMode 
-    } = props;
     
-    // Get content and settings
-    const headingText = getContentValue('innerText', 'Default Heading');
-    const variant = getCustomSetting('variant', 'h1');
-    const animation = getCustomSetting('animation', 'none');
     
-    // Animation class based on setting
-    const getAnimationClass = () => {
-      if (!isLiveMode || animation === 'none') return '';
+  ] as ComponentSettingDefinition[],
+  
+  // Simplified render function (no hooks or inline editing logic here)
+  render: (props: BaseComponentProps & EditorComponentHelpers) => {
+    const {
+      element,
+      styles: computedStyles,
+      getCustomSetting,
       
-      switch (animation) {
-        case 'fade-in': return 'animate-fade-in';
-        case 'slide-up': return 'animate-slide-up';
-        default: return '';
+    } = props;
+
+    // Get settings
+    const variant = getCustomSetting('variant', 'h1');
+    
+   
+
+    // Safely get text from element.content, falling back to default
+    let headingText = 'Default Heading'; // Default fallback
+    if (typeof element.content === 'object' && !Array.isArray(element.content) && element.content !== null) {
+      // Ensure innerText exists and is a string
+      if (typeof element.content.innerText === 'string') {
+          headingText = element.content.innerText;
       }
-    };
-    
-    // Responsive font size adjustments based on device
-    const responsiveStyles = {
-      ...styles,
-      fontSize: device === 'Mobile' 
-        ? '1.75rem' 
-        : device === 'Tablet' 
-          ? '2rem' 
-          : styles.fontSize
-    };
-    
-    // Debug logs
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`Heading rendering: ${variant} with text "${headingText}"`);
     }
-    
-    // Render the appropriate heading element based on variant
+
+    // Render the tag
     const HeadingTag = variant as keyof JSX.IntrinsicElements;
-    
     return (
-      <HeadingTag 
-        style={responsiveStyles} 
-        className={`heading-component ${getAnimationClass()}`}
+      <HeadingTag
+        style={computedStyles}     
       >
         {headingText}
       </HeadingTag>
     );
   }
-});
+};
+
+// Create and register using the factory
+export const HeadingComponent = createLeafComponent(headingConfig);
 
 export default HeadingComponent; 

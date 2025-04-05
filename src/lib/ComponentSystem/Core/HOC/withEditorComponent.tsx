@@ -18,60 +18,68 @@ export interface ExtendedBaseProps extends BaseComponentProps {
 
 /**
  * HOC that adds standard editor component behavior
- * 
- * @param Component The component to wrap
- * @param config Component configuration
+ *
+ * @param Component The base component render function (Leaf or Container)
+ * @param config The ComponentConfig (primarily used here for display name)
  * @returns Enhanced component with editor functionality
  */
-export function withEditorComponent<P extends ExtendedBaseProps>(
+export function withEditorComponent<P extends BaseComponentProps>(
+  // Component here is the basic render function from the factory (e.g., LeafComponent or ContainerComponent)
   Component: React.ComponentType<P & EditorComponentHelpers>,
   config: ComponentConfig
 ) {
-  // Display name for debugging
-  const displayName = `withEditorComponent(${Component.displayName || Component.name || 'Component'})`;
-  
-  // Create the wrapped component
+  // Display name for debugging in React DevTools
+  const displayName = `withEditor(${config.name || Component.displayName || Component.name || 'Component'})`;
+
+  // Create the wrapped component that receives the raw props (like 'element')
   const WrappedComponent = (props: P) => {
-    const { element, isChildOfContainer, ...restProps } = props;
-    
-    // Get standard helpers and behavior
+    const { element, ...restProps } = props;
+
+    // --- Inject Editor Context and Helpers ---
+    // This hook provides computed styles, interaction state (isSelected), and update functions (setContent, etc.)
     const helpers = useEditorComponentHelpers(element);
-    
-    // Enhanced renderChild that passes isChildOfContainer prop
-    const renderChild = (child: EditorElement) => (
-      <Recursive 
-        key={child.id} 
-        element={{
-          ...child,
-          isChildOfContainer: true
-        } as EditorElement} 
-      />
-    );
-    
-    // Debug the component rendering
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`Rendering ${displayName} for element ${element.id} (${element.type})`);
-    }
-    
-    // Render with standard wrapper
+
+    // --- Define Child Rendering Logic ---
+    // This helper function will be passed down to container components via props.
+    // It uses the Recursive component to render a child element.
+    const renderChild = (childElement: EditorElement): React.ReactNode => {
+        // Pass the child element to the Recursive component
+        // Add a unique key for React's reconciliation algorithm
+        return React.createElement(Recursive, {
+            key: childElement.id, // Use element ID as key
+            element: childElement
+        });
+    };
+
+    // --- Render the Component ---
+    // 1. Render the outer ComponentWrapper (handles selection outlines, drag handles etc. - assuming)
+    // 2. Render the actual user-defined Component, passing:
+    //    - The original element props
+    //    - The injected helpers (styles, isSelected, setContent, etc.)
+    //    - The renderChild helper function
+    //    - Any other props passed down
     return (
-      <ComponentWrapper 
+      <ComponentWrapper
         element={element}
-        isChildOfContainer={isChildOfContainer}
+      // Add any other props ComponentWrapper might need
       >
         <Component
-          element={element}
-          isChildOfContainer={isChildOfContainer}
-          {...helpers}
-          renderChild={renderChild}
-          {...(restProps as any)}
+          {...(restProps as P)} // Pass original props (excluding element)
+          element={element}      // Pass the element data
+          {...helpers}           // Spread the injected helpers
+          renderChild={renderChild} // Pass the child rendering function
         />
       </ComponentWrapper>
     );
   };
-  
-  // Set display name for debugging
+
+  // Set display name for easier debugging
   WrappedComponent.displayName = displayName;
-  
+
+  // Return the enhanced component
   return WrappedComponent;
 }
+
+// Check if the HOC file in the factories directory is still needed
+// If src/lib/ComponentSystem/hocs/withEditorComponent.tsx is the canonical one,
+// delete src/lib/ComponentSystem/Core/HOC/withEditorComponent.tsx

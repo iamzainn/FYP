@@ -10,18 +10,18 @@ import { registerAllComponents } from '@/lib/ComponentSystem/Core/components';
 import { initializeComponentSystem } from '@/lib/ComponentSystem/bootstrap';
 
 import '@/lib/ComponentSystem/Core/components/HeroSection';
-import '@/lib/ComponentSystem/Core/components/HeaderSection';
-import '@/lib/ComponentSystem/Core/components/Navigation';
-import '@/lib/ComponentSystem/Core/components/NavigationItem';
-import '@/lib/ComponentSystem/Core/components/Logo';
-import '@/lib/ComponentSystem/Core/components/HeaderActions';
+// import '@/lib/ComponentSystem/Core/components/HeaderSection';
+// import '@/lib/ComponentSystem/Core/components/Navigation';
+// import '@/lib/ComponentSystem/Core/components/NavigationItem';
+// import '@/lib/ComponentSystem/Core/components/Logo';
+// import '@/lib/ComponentSystem/Core/components/HeaderActions';
 
 // Generic handler for component dragging
-const handleDragStart = (e: React.DragEvent, type: string) => {
-  e.dataTransfer.setData('componentType', type)
+const handleDragStart = (e: React.DragEvent, type: EditorBtns) => {
+  e.dataTransfer.setData('componentType', type || '')
   
   // Try to use the registry first
-  const componentInfo = componentRegistry.getComponent(type);
+  const componentInfo = componentRegistry.getComponent(type || '');
   if (componentInfo) {
     try {
       const newElement = componentRegistry.createInstance(type);

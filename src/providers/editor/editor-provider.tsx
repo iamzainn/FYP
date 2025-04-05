@@ -14,6 +14,7 @@ export type EditorElement = {
   styles: React.CSSProperties 
   name: string
   type: EditorBtns
+  parentId: string
   content: EditorElement[] | {
     src?: string,
     innerText?: string,
@@ -46,6 +47,7 @@ export type EditorElement = {
     mobile?: Partial<React.CSSProperties>
     tablet?: Partial<React.CSSProperties>
   }
+ 
 }
 
 export type Editor = {
@@ -145,6 +147,7 @@ const initialEditorState: Editor = {
     {
       content: [],
       id: '__body',
+      parentId: 'html',
       name: 'Body',
       styles: {},
       type: '__body',
@@ -153,6 +156,7 @@ const initialEditorState: Editor = {
   selectedElement: {
     content: [],
     id: '__body',
+    parentId: 'html',
     name: 'Body',
     styles: {},
     type: '__body',

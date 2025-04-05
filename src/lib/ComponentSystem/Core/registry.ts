@@ -8,65 +8,31 @@
 import { v4 as uuid } from 'uuid';
 import { ComponentConfig, ComponentRegistry, RegisteredComponent } from './types';
 import { EditorElement } from '@/providers/editor/editor-provider';
-
+import { EditorBtns } from '@/lib/constants';
 
 console.log("Registry module loaded", Date.now());
 
 /**
  * Component Registry Implementation
- * Maintains a registry of all available components
+ * Maintains a registry of all available components and handles instance creation.
  */
 class ComponentRegistryImpl implements ComponentRegistry {
   private components: Record<string, RegisteredComponent> = {};
   
   /**
-   * Register a component in the registry
+   * Register a component type along with its configuration and React component.
    */
   registerComponent(config: ComponentConfig, Component: React.ComponentType<any>): void {
-    if (this.components[config.type]) {
+    if (this.components[config.type as string]) {
       console.warn(`Component type "${config.type}" is already registered. Overwriting.`);
     }
     
-    // Create a function to create instances of this component
-    const createInstance = () => {
-      // Generate a new element with default values
-      const element: Partial<EditorElement> = {
-        id: uuid(),
-        name: config.name,
-        type: config.type as any,
-        styles: { ...config.defaultStyles },
-        customSettings: { ...config.defaultCustomSettings },
-      };
-      
-      // Add content based on configuration
-      if (config.defaultContent) {
-        element.content = { ...config.defaultContent };
-      } else if (config.children) {
-        // For container components, initialize with empty array
-        element.content = [];
-      }
-      
-      // Add responsive settings if enabled
-      if (config.responsiveStyles) {
-        element.responsiveSettings = {
-          mobile: {},
-          tablet: {}
-        };
-      }
-      
-      // Debug log for component creation
-      if (process.env.NODE_ENV === 'development') {
-        console.debug(`Created instance of ${config.type}:`, element);
-      }
-      
-      return element;
-    };
-    
-    // Store the component in the registry
-    this.components[config.type] = {
+    // Store the component and its config
+    this.components[config.type as string] = {
       Component,
       config,
-      createInstance
+      // Include the createInstance method bound to this type
+      createInstance: () => this.createInstance(config.type)
     };
     
     if (process.env.NODE_ENV === 'development') {
@@ -75,21 +41,21 @@ class ComponentRegistryImpl implements ComponentRegistry {
   }
   
   /**
-   * Get a component by type
+   * Get a registered component's details by type.
    */
   getComponent(type: string): RegisteredComponent | undefined {
     return this.components[type];
   }
   
   /**
-   * Get all registered components
+   * Get all registered components. Returns a copy.
    */
   getAllComponents(): Record<string, RegisteredComponent> {
-    return { ...this.components }; // Return a copy to prevent mutations
+    return { ...this.components };
   }
   
   /**
-   * Get components by category
+   * Get components filtered by category.
    */
   getComponentsByCategory(category: string): RegisteredComponent[] {
     return Object.values(this.components).filter(
@@ -98,60 +64,68 @@ class ComponentRegistryImpl implements ComponentRegistry {
   }
   
   /**
-   * Create a new instance of a component
+   * Create a new EditorElement instance for a given component type.
+   * This function uses the registered ComponentConfig to populate default values.
    */
-  createInstance(type: string): Partial<EditorElement> {
-    const component = this.getComponent(type);
-    if (!component) {
-      console.error(`Component type "${type}" not found in registry.`);
-      throw new Error(`Component type "${type}" not found in registry.`);
+  createInstance(type: EditorBtns): Partial<EditorElement> {
+    const componentRegistration = this.getComponent(type as string);
+    if (!componentRegistration) {
+      const errorMsg = `Component type "${type}" not found in registry. Cannot create instance.`;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
     
-    // Generate a new element with default values
+    const config = componentRegistration.config;
+    
+    // Start building the EditorElement using defaults from the config
     const element: Partial<EditorElement> = {
       id: uuid(),
-      name: component.config.name,
-      type: component.config.type as any,
-      styles: { ...component.config.defaultStyles },
-      customSettings: { ...component.config.defaultCustomSettings },
+      type: config.type,
+      name: config.name, // Use registered name as default instance name
+      styles: config.styles ? { ...config.styles } : {},
+      customSettings: config.customSettings ? { ...config.customSettings } : {},
+      responsiveSettings: config.responsiveSettings ? JSON.parse(JSON.stringify(config.responsiveSettings)) : { mobile: {}, tablet: {} },
+      // Initialize content based on whether it's expected to be an array (container) or object (leaf)
+      // The actual content population happens below.
+      content: config.childrenConfig ? [] : (config.content || {}),
     };
     
-    // Add content based on configuration
-    if (component.config.defaultContent) {
-      element.content = { ...component.config.defaultContent };
-    } else if (component.config.children) {
-      // For container components, initialize with child components
-      if (component.config.children.createDefaultChildren) {
-        // Use the function to create default children
-        element.content = component.config.children.createDefaultChildren();
-      } else if (component.config.children.defaultChildren && component.config.children.defaultChildren.length > 0) {
-        // Create default children based on the types
-        element.content = component.config.children.defaultChildren.map(childType => {
+    // --- Handle Content Initialization ---
+    // For container components (those with childrenConfig)
+    if (config.childrenConfig) {
+      element.content = []; // Ensure content is an array for containers
+      const { createDefaultChildren, defaultChildren } = config.childrenConfig;
+      
+      if (typeof createDefaultChildren === 'function') {
+        // Use the custom function if provided
+        try {
+          element.content = createDefaultChildren();
+        } catch (error) {
+          console.error(`Error executing createDefaultChildren for ${config.type}:`, error);
+          element.content = []; // Fallback to empty array on error
+        }
+      } else if (Array.isArray(defaultChildren) && defaultChildren.length > 0) {
+        // Create instances based on defaultChildren types
+        element.content = defaultChildren.map(childType => {
           try {
-            // Attempt to create instances of default children
-            return this.createInstance(childType);
+            // Recursively call createInstance for each child type
+            // Note: Ensure childType is a valid EditorBtns value
+            return this.createInstance(childType as EditorBtns);
           } catch (error) {
-            console.warn(`Could not create default child of type "${childType}": ${error}`);
-            return null;
+            console.warn(`Could not create default child instance of type "${childType}" for parent "${config.type}": ${error}`);
+            return null; // Return null for failed creations
           }
-        }).filter(Boolean); // Remove any null values
-      } else {
-        // Empty array when no default children are specified
-        element.content = [];
+        }).filter(Boolean) as EditorElement[]; // Filter out any nulls
       }
     }
-    
-    // Add responsive settings if enabled
-    if (component.config.responsiveStyles) {
-      element.responsiveSettings = {
-        mobile: {},
-        tablet: {}
-      };
+    // For leaf components, copy default content if defined in config
+    else if (config.content && typeof config.content === 'object' && !Array.isArray(config.content)) {
+      element.content = { ...config.content };
     }
     
-    // Debug log for component creation
+    // Debug log for component instance creation
     if (process.env.NODE_ENV === 'development') {
-      console.debug(`Created instance of ${component.config.type}:`, element);
+      console.debug(`Created instance of ${config.type}:`, JSON.parse(JSON.stringify(element)));
     }
     
     return element;
@@ -160,4 +134,4 @@ class ComponentRegistryImpl implements ComponentRegistry {
 
 // Export a singleton instance of the registry
 export const componentRegistry = new ComponentRegistryImpl();
-console.log("Registry created");
+console.log("Registry created and instance logic centralized.");

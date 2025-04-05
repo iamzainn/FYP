@@ -14,5 +14,6 @@ export type EditorBtns =
   | 'logo'
   | 'headerSection'
   | 'headerActions'
+  | 'paragraph'
   | null
   

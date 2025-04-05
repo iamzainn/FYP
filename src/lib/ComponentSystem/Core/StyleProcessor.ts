@@ -18,21 +18,21 @@ import { componentRegistry } from './registry';
 export const computeStyles = (
   element: EditorElement,
   device: DeviceTypes,
-  editorState?: any
+  editorState?: any // Optional parameter, not currently used but kept for potential future use
 ): React.CSSProperties => {
-  // Start with base styles
-  let computedStyles: React.CSSProperties = { ...element.styles };
+  // Start with base styles from the element state
+  let computedStyles: React.CSSProperties = { ...(element.styles || {}) }; // Ensure element.styles exists
   
-  // Apply device-specific styles if available
+  // Apply device-specific responsive styles if available
   if (device !== 'Desktop' && element.responsiveSettings) {
     const deviceKey = device === 'Mobile' ? 'mobile' : 'tablet';
     const deviceStyles = element.responsiveSettings[deviceKey];
         
     if (deviceStyles) {
-      // Safely merge device-specific styles
+      // Merge device-specific styles over the base styles
       computedStyles = { ...computedStyles, ...deviceStyles };
       
-      // Debug responsiveness in development
+      // Optional: Debugging in development mode
       if (process.env.NODE_ENV === 'development') {
         console.debug(
           `Applied ${device} styles to ${element.id} (${element.type}): `, 
@@ -42,49 +42,38 @@ export const computeStyles = (
     }
   }
   
-  // Apply effects from custom settings on styles
+  // REMOVED: The logic for applying affectsStyles from custom settings is now handled 
+  // directly in the Settings.tsx -> handleChangeCustomValues function when the setting changes.
+  // This ensures the base element.styles object is updated directly.
+  /*
   if (element.customSettings) {
-    // Get component definition
     const componentDef = componentRegistry.getComponent(element.type as string);
-    if (componentDef && componentDef.config.customSettings) {
-      // For each custom setting that affects styles
-      for (const setting of componentDef.config.customSettings) {
-        if (setting.affectsStyles && setting.id in element.customSettings) {
-          const settingValue = element.customSettings[setting.id];
-          
-          // Apply each style effect
-          for (const styleEffect of setting.affectsStyles) {
+    if (componentDef && componentDef.config.customSettingFields) {
+      for (const settingDefinition of componentDef.config.customSettingFields) {
+        if (settingDefinition.affectsStyles && settingDefinition.id in element.customSettings) {
+          const settingValue = element.customSettings[settingDefinition.id];
+          for (const styleEffect of settingDefinition.affectsStyles) {
             const { property, valueMap, transform } = styleEffect;
-            
-            // Determine the actual style value
             let styleValue = settingValue;
-            
-            // Apply value mapping if provided
-            if (valueMap && typeof settingValue === 'string' && settingValue in valueMap) {
+            if (valueMap && (typeof settingValue === 'string' || typeof settingValue === 'number') && settingValue in valueMap) {
               styleValue = valueMap[settingValue];
-            }
-            // Apply transform function if provided
-            else if (transform && typeof transform === 'function') {
+            } else if (transform && typeof transform === 'function') {
               styleValue = transform(settingValue);
             }
-            
-            // Safely set the computed style with proper type handling
             if (property) {
               try {
-                // Use an object to safely set the property
                 const styleUpdate = { [property]: styleValue };
-                // Merge with computed styles
                 computedStyles = { ...computedStyles, ...styleUpdate };
-              } catch (error) {
-                console.error(`Error applying style ${property}:`, error);
-              }
+              } catch (error) { console.error(...); }
             }
           }
         }
       }
     }
   }
+  */
   
+  // Return the final computed styles (Base + Responsive)
   return computedStyles;
 };
 

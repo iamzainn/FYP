@@ -1,23 +1,26 @@
-import { createLeafComponent } from '../../factories/createLeafComponent';
-import React from 'react';
+import React from 'react'; // Remove hook imports
+import { createLeafComponent, LeafComponentConfig } from '../../factories/createLeafComponent'; // Import LeafComponentConfig
+import { ContentFieldDefinition, ComponentSettingDefinition, StyleEffect, BaseComponentProps, EditorComponentHelpers } from '../types'; // Remove unused ComponentConfig
 
-export const ButtonComponent = createLeafComponent({
+// Use LeafComponentConfig and add inlineTextEditField
+const buttonConfig: LeafComponentConfig = {
   type: 'button',
   name: 'Button',
   category: 'elements',
-  
-  // Default styles
-  defaultStyles: {
-    backgroundColor: '#3b82f6',
+  inlineTextEditField: 'innerText', // Enable inline editing for 'innerText'
+
+  // Default values applied when creating an instance
+  styles: { // Use 'styles' for default styles
+    backgroundColor: '#3b82f6', // primary default
     color: 'white',
-    padding: '0.75rem 1.5rem',
+    padding: '0.75rem 1.5rem', // md default
     borderRadius: '0.375rem',
     fontWeight: '500',
-    fontSize: '1rem',
+    fontSize: '1rem', // md default
     cursor: 'pointer',
     display: 'inline-block',
     textAlign: 'center',
-    border: 'none',
+    border: 'none', // primary default
     boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
     transition: 'all 150ms ease',
     marginTop: '1rem',
@@ -27,9 +30,32 @@ export const ButtonComponent = createLeafComponent({
     textDecoration: 'none',
     boxSizing: 'border-box',
     lineHeight: '1.5',
+    width: 'auto', // Default from fullWidth: false
+    zIndex: '2', // Ensure buttons are above overlays potentially
   },
-  
-  // Content fields
+  content: { // Use 'content' for default content values
+    innerText: 'Get Started',
+    href: '#',
+    target: '_self'
+  },
+  customSettings: { // Use 'customSettings' for default setting values
+    buttonVariant: 'primary',
+    size: 'md',
+    fullWidth: false
+  },
+   responsiveSettings: { // Optional: Define default responsive overrides
+      mobile: {
+         // Make button full width on mobile by default
+        width: '100%',
+        display: 'block',
+        padding: '0.75rem 1rem', // Adjusted padding for smaller screens
+      },
+      tablet: {
+         padding: '0.75rem 1.25rem',
+      }
+  },
+
+  // Definitions for the editor controls
   contentFields: [
     {
       id: 'innerText',
@@ -53,17 +79,9 @@ export const ButtonComponent = createLeafComponent({
       ],
       defaultValue: '_self'
     }
-  ],
-  
-  // Default content
-  defaultContent: {
-    innerText: 'Get Started',
-    href: '#',
-    target: '_self'
-  },
-  
-  // Custom settings
-  customSettings: [
+  ] as ContentFieldDefinition[],
+
+  customSettingFields: [ // Use 'customSettingFields' for setting definitions
     {
       id: 'buttonVariant',
       label: 'Button Style',
@@ -75,7 +93,7 @@ export const ButtonComponent = createLeafComponent({
         { value: 'ghost', label: 'Ghost' }
       ],
       defaultValue: 'primary',
-      affectsStyles: [
+      affectsStyles: [ // Keep affectsStyles definitions here
         {
           property: 'backgroundColor',
           valueMap: {
@@ -103,7 +121,7 @@ export const ButtonComponent = createLeafComponent({
             'ghost': 'none'
           }
         }
-      ]
+      ] as StyleEffect[] // Assertion needed
     },
     {
       id: 'size',
@@ -132,7 +150,7 @@ export const ButtonComponent = createLeafComponent({
             'lg': '1.125rem'
           }
         }
-      ]
+      ] as StyleEffect[] // Assertion needed
     },
     {
       id: 'fullWidth',
@@ -148,60 +166,56 @@ export const ButtonComponent = createLeafComponent({
           property: 'display',
           transform: (value) => value ? 'block' : 'inline-block'
         }
-      ]
+      ] as StyleEffect[] // Assertion needed
     }
-  ],
-  
-  // Default custom settings
-  defaultCustomSettings: {
-    buttonVariant: 'primary',
-    size: 'md',
-    fullWidth: false
-  },
-  
-  // The rendering function
-  render: (props) => {
-    const { 
-      styles, 
-      getContentValue, 
-      getCustomSetting, 
-      device,
+  ] as ComponentSettingDefinition[],
+
+  // styleFields: [], // Optionally define controllable styles here
+
+  // Simplified render function
+  render: (props: BaseComponentProps & EditorComponentHelpers) => {
+    const {
+      element,
+      styles: computedStyles,
+      getContentValue, // Keep for href, target defaults
+      
+      isLiveMode,
+      // Remove setContent, isSelected - not used here
     } = props;
-    
-    // Get content and settings
-    const buttonText = getContentValue('innerText', 'Get Started');
+
+    // Get content and settings needed
     const href = getContentValue('href', '#');
     const target = getContentValue('target', '_self');
-    const buttonVariant = getCustomSetting('buttonVariant', 'primary');
-    const fullWidth = getCustomSetting('fullWidth', false);
     
-    // Apply responsive adjustments
-    const responsiveStyles = {
-      ...styles,
-      // Make buttons full width on mobile by default if not already set
-      ...(device === 'Mobile' && !fullWidth ? { 
-        width: '100%', 
-        display: 'block' 
-      } : {})
-    };
-    
-    // Debug logs
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`Button rendering: ${buttonVariant} style with text "${buttonText}"`);
+
+    // Safely get text from element.content, falling back to default
+    let buttonText = 'Get Started'; // Default fallback
+    if (typeof element.content === 'object' && !Array.isArray(element.content) && element.content !== null) {
+      if (typeof element.content.innerText === 'string') {
+          buttonText = element.content.innerText;
+      }
     }
-    
+
+    // Render the anchor tag
     return (
-      <a 
-        href={href}
+      <a
+        href={isLiveMode ? href : undefined}
         target={target}
-        style={responsiveStyles} 
-        className={`button-component ${fullWidth ? 'full-width' : ''}`}
-        rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+        style={computedStyles}
+        
+        rel={target === '_self' ? undefined: 'noopener noreferrer'}
+        
+        onClick={(e) => { if (!isLiveMode) e.preventDefault(); }}
+        
+        
       >
         {buttonText}
       </a>
     );
   }
-});
+};
+
+// Create and register the component using the factory
+export const ButtonComponent = createLeafComponent(buttonConfig);
 
 export default ButtonComponent; 

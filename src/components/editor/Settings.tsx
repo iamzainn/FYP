@@ -46,7 +46,7 @@ const SettingsTab = () => {
   }
 
   // Get the appropriate style handler based on the current device
-  const handleStyleChange = (property: string, value: string | number) => {
+  const handleStyleChange = (property: string, value: string | number | boolean) => {
     if (currentDevice === 'Desktop') {
       // Update the base styles
       dispatch({

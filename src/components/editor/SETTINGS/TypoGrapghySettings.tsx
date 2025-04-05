@@ -5,7 +5,7 @@ import { getResponsiveValue } from './styleUtils'
 
 interface TypographySettingsProps {
   element: EditorElement;
-  onStyleChange: (property: string, value: string | number) => void;
+  onStyleChange: (property: string, value: string | number | boolean) => void;
   currentDevice: 'Desktop' | 'Tablet' | 'Mobile';
 }
 

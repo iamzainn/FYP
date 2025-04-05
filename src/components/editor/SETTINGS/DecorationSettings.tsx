@@ -6,7 +6,7 @@ import { getResponsiveValue } from './styleUtils'
 
 interface DecorationsSettingsProps {
   element: EditorElement;
-  onStyleChange: (property: string, value: string | number) => void;
+  onStyleChange: (property: string, value: string | number | boolean) => void;
   currentDevice: 'Desktop' | 'Tablet' | 'Mobile';
 }
 

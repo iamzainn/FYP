@@ -69,6 +69,7 @@ const Editor = ({ storeId, liveMode }: EditorProps) => {
         type: 'CHANGE_CLICKED_ELEMENT',
         payload: {
           elementDetails: {
+            parentId: "",
             id: "",
             content: [],
             name: "",

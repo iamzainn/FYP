@@ -428,7 +428,7 @@ export const useEditor = () => {
 //   return newState
 // }
 
-const editorReducer = (state: EditorState = initialState, action: EditorAction) => {
+const editorReducer = (state: EditorState, action: EditorAction) => {
 
   
   switch (action.type) {
@@ -439,10 +439,9 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
         selectedElement: action.payload.elementDetails
       }
       
-      // Create a deep copy of the state for history to avoid reference issues
       const updatedHistory = [
         ...state.history.history.slice(0, state.history.currentIndex + 1),
-        JSON.parse(JSON.stringify(updatedEditorState)), // DEEP CLONE here for history integrity
+        JSON.parse(JSON.stringify(updatedEditorState)),
       ]
 
       console.log('Element added, new history index:', updatedHistory.length - 1);
@@ -469,10 +468,9 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
         selectedElement: action.payload.elementDetails
       }
       
-      // Use deep cloning here as well for consistency
       const updatedHistoryWithUpdate = [
         ...state.history.history.slice(0, state.history.currentIndex + 1),
-        JSON.parse(JSON.stringify(updatedEditorStateWithUpdate)), // DEEP CLONE here
+        JSON.parse(JSON.stringify(updatedEditorStateWithUpdate)), 
       ]
       
       console.log('Element updated, new history index:', updatedHistoryWithUpdate.length - 1);
@@ -491,32 +489,28 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
     case 'DELETE_ELEMENT': {
       const updatedElements = deleteAnElement(state.editor.elements, action);
       
-      // Create a null selected element reference
       const nullSelectedElement = {
         id: "",
         content: [],
         name: "",
         styles: {},
         type: null,
+        parentId: "", // Add parentId if needed, depends on type EditorElement definition
       };
       
-      // Create the updated editor state with the element removed
       const updatedEditorState = {
         ...state.editor,
         elements: updatedElements,
-        selectedElement: nullSelectedElement // This already clears selection
+        selectedElement: nullSelectedElement 
       };
       
-      // Add this state to history to enable undo
       const updatedHistory = [
         ...state.history.history.slice(0, state.history.currentIndex + 1),
-        // Store a deep copy in history to ensure we can restore it properly
         JSON.parse(JSON.stringify(updatedEditorState)),
       ];
       
       console.log('Element deleted, selection cleared in DELETE_ELEMENT action');
       
-      // Return the new state with updated history
       return {
         ...state,
         editor: updatedEditorState,
@@ -529,63 +523,39 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
     }
     
     case 'REDO': {
-      // Check if we can redo (not at the end of history)
       if (state.history.currentIndex < state.history.history.length - 1) {
         const nextIndex = state.history.currentIndex + 1;
-        
-        // Create a deep copy of the next state to ensure all elements are properly restored
-        // Using JSON stringify/parse for a true deep clone that breaks all references
         const nextEditorState = JSON.parse(JSON.stringify(state.history.history[nextIndex]));
-        
-        // Log the redo operation for debugging
         console.log('Redoing to history index:', nextIndex);
         console.log('Restoring state:', nextEditorState);
-        
-        // Return the new state with:
-        // 1. Deep-cloned editor state from history
-        // 2. Updated currentIndex pointing to the restored history item
         return {
           ...state,
-          editor: nextEditorState, // Use the deep-cloned state
+          editor: nextEditorState,
           history: {
             ...state.history,
             currentIndex: nextIndex,
           },
         };
       }
-      return state; // Return unchanged state if we can't redo
+      return state;
     }
     
     case 'UNDO': {
-      // Only allow undo if we're not at the beginning of history (index 0)
       if (state.history.currentIndex > 0) {
         const prevIndex = state.history.currentIndex - 1;
-        
-        // Create a deep copy of the previous state to ensure all elements are properly restored
-        // Deep copying is crucial for:
-        // 1. Breaking all references to avoid accidental mutations
-        // 2. Ensuring nested elements are fully restored
-        // 3. Preserving exact state as it was at that point in history
         const prevEditorState = JSON.parse(JSON.stringify(state.history.history[prevIndex]));
-        
-        // Log the undo operation for debugging
         console.log('Undoing to history index:', prevIndex);
         console.log('Restoring state:', prevEditorState);
-        
-        // Return the new state with:
-        // 1. Deep-cloned editor state from history
-        // 2. Updated currentIndex pointing to the restored history item
-        // This ensures all elements, styles and selections are restored exactly as they were
         return {
           ...state,
-          editor: prevEditorState, // Use the deep-cloned state
+          editor: prevEditorState,
           history: {
             ...state.history,
             currentIndex: prevIndex,
           },
         };
       }
-      return state; // Return unchanged state if we can't undo
+      return state;
     }
     
     case 'LOAD_LOCALSTORAGE': {
@@ -673,7 +643,6 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
     case 'CHANGE_DEVICE': {
       const newDevice = action.payload.device;
       
-      // Create updated state first
       const changedDeviceState = {
         ...state,
         editor: {
@@ -682,14 +651,11 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
         },
       };
       
-      // Add this state to history to ensure Settings gets new state
       const updatedHistory = [
         ...state.history.history.slice(0, state.history.currentIndex + 1),
-        // Store a deep copy in history
         JSON.parse(JSON.stringify(changedDeviceState.editor)),
       ];
       
-      // Return new state with updated history
       return {
         ...changedDeviceState,
         history: {
@@ -702,16 +668,13 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
     
     case 'CHANGE_CLICKED_ELEMENT': {
       console.log("CHANGE_CLICKED_ELEMENT action dispatched")
-      // Only update if the selected element is actually changing
       const currentId = state.editor.selectedElement?.id || "";
       const newId = action.payload.elementDetails?.id || "";
       
       if (currentId === newId) {
-        // If it's the same element, don't update state at all
         return state;
       }
       
-      // Check if element exists if it's not null
       if (newId !== "") {
         const elementExists = elementExistsInArray(state.editor.elements, newId);
         if (!elementExists) {
@@ -720,7 +683,6 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
         }
       }
       
-      // Create the updated editor state with the new selected element
       const updatedEditorState = {
         ...state.editor,
         selectedElement: action.payload.elementDetails || {
@@ -729,19 +691,17 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
           name: '',
           styles: {},
           type: null,
+          parentId: '' // Add parentId if needed
         }
       };
       
-      // Add this state to history to enable undo/redo for selections
       const updatedHistory = [
         ...state.history.history.slice(0, state.history.currentIndex + 1),
-        // Store a deep copy in history to ensure we can restore it properly
         JSON.parse(JSON.stringify(updatedEditorState)),
       ];
       
       console.log('Element selected, new history index:', updatedHistory.length - 1);
       
-      // Return the new state with updated history
       return {
         ...state,
         editor: updatedEditorState,
@@ -756,30 +716,24 @@ const editorReducer = (state: EditorState = initialState, action: EditorAction) 
     case 'APPLY_DEVICE_STYLES': {
       const {  updatedElements } = action.payload;
       
-      // Create a copy of the elements array
       let newElements = [...state.editor.elements];
       
-      // Apply updates to all elements that need changes
       updatedElements.forEach(elementToUpdate => {
-        // Update the element in the tree
         newElements = updateElementById(newElements, elementToUpdate);
       });
       
-      // Create the updated editor state with all style changes
       const updatedEditorState = {
         ...state.editor,
         elements: newElements
       };
       
-      // Add this state to history (just one entry for all updates)
       const updatedHistory = [
         ...state.history.history.slice(0, state.history.currentIndex + 1),
-        JSON.parse(JSON.stringify(updatedEditorState)), // Deep clone for history
+        JSON.parse(JSON.stringify(updatedEditorState)),
       ];
       
       console.log(`Device styles applied, creating single history entry at index: ${updatedHistory.length - 1}`);
       
-      // Return the new state with a single updated history entry
       return {
         ...state,
         editor: updatedEditorState,

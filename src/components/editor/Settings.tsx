@@ -1,29 +1,64 @@
+/* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 "use client"
 
-import {  useEditor } from "@/providers/editor/editor-provider"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-
+import { EditorElement, useEditor } from "@/providers/editor/editor-provider"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { v4 as uuidv4 } from 'uuid';
 import { cn } from "@/lib/utils"
 import { TypographySettings } from './SETTINGS/TypoGrapghySettings'
 import { DimensionsSettings } from './SETTINGS/DimenstionSettings'
 import { DecorationsSettings } from './SETTINGS/DecorationSettings'
-import { CustomSettings } from './SETTINGS/CustomSettings'
+import { ContentFieldsPanel } from './SETTINGS/ContentFieldsPanelSettings';
+import { CustomSettingsPanel } from './SETTINGS/CustomPanelSettings';
+import { EditorActionsPanel } from './SETTINGS/EditorActionsPanel';
 import { Trash } from "lucide-react"
 import { useState } from "react"
 import { componentRegistry } from '@/lib/ComponentSystem/Core/registry'
-import { ComponentConfig } from "@/lib/ComponentSystem/Core/types"
+import { ComponentConfig, EditorActionDefinition } from "@/lib/ComponentSystem/Core/types"
 
+
+
+/**
+ * Helper function to create a default element structure.
+ * It fetches the default config from the registry.
+ */
+const createDefaultElement = (type: string, parentId: string): EditorElement | null => {
+    const componentDef = componentRegistry.getComponent(type);
+    if (!componentDef) {
+        console.error(`[createDefaultElement] Component type "${type}" not found in registry.`);
+        return null;
+    }
+    const config = componentDef.config;
+
+    // Generate default children if specified
+    let defaultContent: EditorElement[] | Record<string, any> =
+        config.content || (config.childrenConfig ? [] : {}); // Default based on container/leaf
+
+    if (config.childrenConfig && config.childrenConfig.defaultChildren && Array.isArray(defaultContent)) {
+        defaultContent = config.childrenConfig.defaultChildren
+            .map(childType => createDefaultElement(childType as string, uuidv4())) // Generate ID for child here? Or let reducer handle? Assume generate here for now.
+            .filter(Boolean) as EditorElement[]; // Filter out nulls if child type not found
+    }
+
+    return ({
+        id: uuidv4(),
+        parentId: parentId,
+        type: type as any,
+        name: config.name,
+        styles: config.styles || {},
+        content: defaultContent,
+        customSettings: config.customSettings || {},
+        responsiveSettings: config.responsiveSettings || {},
+    });
+}
 
 const SettingsTab = () => {
   const { state, dispatch } = useEditor()
-  const [activeSection, setActiveSection] = useState<string[]>(['typography', 'decorations', 'dimensions', 'custom', 'content'])
+  const [activeSection, setActiveSection] = useState<string[]>([
+      'content', 'customSettings', 'actions', 'typography', 'dimensions', 'decorations'
+  ])
   const selectedElement = state.editor.selectedElement
   const currentDevice = state.editor.device
   
@@ -83,161 +118,131 @@ const SettingsTab = () => {
     }
   }
 
-  // Update the handleChangeCustomValues function for atomic update
-  const handleChangeCustomValues = (property: string, value: string | number | boolean | any[]) => {
+  // Update the handleChangeCustomSetting function for atomic update
+  const handleChangeCustomSetting = (property: string, value: string | number | boolean | any[]) => {
     if (!componentConfig || !selectedElement) {
-        console.warn("Cannot handle custom value change: Missing component config or selected element.");
+        console.warn("[Custom Setting Update] Missing component config or selected element.");
         return;
     }
-
-    console.log(`%c[Settings Update - ATOMIC] Starting: ${property} = ${JSON.stringify(value)}`, 'color: blue; font-weight: bold;');
-
-    const settingDefinition = componentConfig.customSettingFields?.find(
-      (field) => field.id === property
-    );
-
+    console.log(`%c[Custom Setting Update - ATOMIC] Starting: ${property} = ${JSON.stringify(value)}`, 'color: blue; font-weight: bold;');
+    const settingDefinition = componentConfig.customSettingFields?.find(f => f.id === property);
     if (!settingDefinition) {
-        console.warn(`[Settings Update - ATOMIC] Setting definition not found for: ${property}`);
+        console.warn(`[Custom Setting Update - ATOMIC] Setting definition not found for: ${property}`);
         return;
     }
 
-    // --- 1. Create a deep clone of the selected element ---
-    const elementClone = (selectedElement);
-    console.log(`%c[Settings Update - ATOMIC] Created deep clone of element ${elementClone.id}`, 'color: teal;');
+    let elementClone = (selectedElement);
+    console.log(`%c[Custom Setting Update - ATOMIC] Created deep clone...`, 'color: teal;');
 
-    // --- 2. Calculate and apply PARENT style overrides to the clone ---
+    // Apply parent style overrides if affectsStyles exists
     if (settingDefinition.affectsStyles) {
-        console.log(`%c[Settings Update - ATOMIC] Calculating PARENT style overrides for ${property}...`, 'color: green;');
+        console.log(`%c[Custom Setting Update - ATOMIC] Calculating PARENT styles...`, 'color: green;');
         let parentStyleOverrides: React.CSSProperties = {};
         for (const styleEffect of settingDefinition.affectsStyles) {
-            const { property: styleProp, valueMap, transform } = styleEffect;
-            let styleValueToApply = value;
-            if (valueMap && (typeof value === 'string' || typeof value === 'number') && value in valueMap) {
-                styleValueToApply = valueMap[value];
-            } else if (transform && typeof transform === 'function') {
-                styleValueToApply = transform(value);
-            }
-            if (styleProp) {
-                parentStyleOverrides = { ...parentStyleOverrides, [styleProp]: styleValueToApply as any };
-            }
+             const { property: styleProp, valueMap, transform } = styleEffect;
+             let styleValueToApply = value;
+             if (valueMap && (typeof value === 'string' || typeof value === 'number') && value in valueMap) styleValueToApply = valueMap[value];
+             else if (transform && typeof transform === 'function') styleValueToApply = transform(value);
+             if (styleProp) parentStyleOverrides = { ...parentStyleOverrides, [styleProp]: styleValueToApply as any };
         }
-        console.log(`%c[Settings Update - ATOMIC] Applying parent style overrides to clone:`, 'color: green;', parentStyleOverrides);
         elementClone.styles = { ...(elementClone.styles || {}), ...parentStyleOverrides };
+         console.log(`%c[Custom Setting Update - ATOMIC] Applied parent styles to clone.`, 'color: green;');
     }
 
-    // --- 3. Apply the changed custom setting value to the clone ---
-    elementClone.customSettings = {
-        ...(elementClone.customSettings || {}),
-        [property]: value,
-    };
-    console.log(`%c[Settings Update - ATOMIC] Applied custom setting '${property}' to clone.`, 'color: teal;');
+    // Apply the changed custom setting value itself
+    elementClone.customSettings = { ...(elementClone.customSettings || {}), [property]: value };
+    console.log(`%c[Custom Setting Update - ATOMIC] Applied setting ${property} to clone.`, 'color: teal;');
 
-    // --- 4. Calculate and apply CHILD modifications to the clone ---
+    // Apply child modifications if affectsChildren exists
     if (settingDefinition.affectsChildren && Array.isArray(elementClone.content)) {
-        console.log(`%c[Settings Update - ATOMIC] Calculating CHILD updates for ${property}...`, 'color: orange;');
-        
-        // Modify the children array *within the clone*
+        console.log(`%c[Custom Setting Update - ATOMIC] Calculating CHILD updates...`, 'color: orange;');
         elementClone.content = elementClone.content.map(child => {
-            let childModified = false;
-            // IMPORTANT: Clone the child *before* potentially modifying it within this loop iteration
-            // This prevents modifications bleeding over if multiple rules affect the same child type
-            const currentChildState = (child);
-
+            let currentChildState = (child);
             settingDefinition.affectsChildren?.forEach(childEffect => {
                  if (child.type === childEffect.targetType) {
                     const updateRules = childEffect.valueMap?.[value as string | number];
                     if (updateRules) {
-                        console.log(`  - Child Rules Found: For value '${value}', target '${childEffect.targetType}', affecting child ${child.id}`);
-                        
-                        // Get current styles/settings *from the cloned child for this iteration*
-                        const currentChildStyles = currentChildState.styles || {};
-                        const currentChildSettings = currentChildState.customSettings || {};
-                        
-                        // Calculate potential new styles/settings based on the rule
-                        const newChildStyles = updateRules.styles
-                            ? { ...currentChildStyles, ...updateRules.styles } // Apply overrides
-                            : currentChildStyles;
-                        const newChildSettings = updateRules.customSettings
-                            ? { ...currentChildSettings, ...updateRules.customSettings } // Apply overrides
-                            : currentChildSettings;
-
-                        // Check if changes occurred compared to the child's state *before this rule*
-                        const stylesChanged = JSON.stringify(newChildStyles) !== JSON.stringify(currentChildStyles);
-                        const settingsChanged = JSON.stringify(newChildSettings) !== JSON.stringify(currentChildSettings);
-
-                        if (stylesChanged || settingsChanged) {
-                            console.log(`    * Change Detected for Child ${child.id}! Applying to child state for this update.`);
-                            if(stylesChanged) { 
-                                console.log(`      New Styles:`, newChildStyles);
-                                currentChildState.styles = newChildStyles; 
-                                childModified = true;
-                            }
-                            if(settingsChanged) { 
-                                console.log(`      New Settings:`, newChildSettings);
-                                currentChildState.customSettings = newChildSettings; 
-                                childModified = true;
-                            }
-                        }
+                         const currentChildStyles = currentChildState.styles || {};
+                         const currentChildSettings = currentChildState.customSettings || {};
+                         const newChildStyles = updateRules.styles ? { ...currentChildStyles, ...updateRules.styles } : currentChildStyles;
+                         const newChildSettings = updateRules.customSettings ? { ...currentChildSettings, ...updateRules.customSettings } : currentChildSettings;
+                         const stylesChanged = JSON.stringify(newChildStyles) !== JSON.stringify(currentChildStyles);
+                         const settingsChanged = JSON.stringify(newChildSettings) !== JSON.stringify(currentChildSettings);
+                         if (stylesChanged || settingsChanged) {
+                              console.log(`    * Change Detected for Child ${child.id}! Applying to child clone.`);
+                             if(stylesChanged) currentChildState.styles = newChildStyles;
+                             if(settingsChanged) currentChildState.customSettings = newChildSettings;
+                         } else {
+                              console.log(`    - No effective change for child ${child.id}.`);
+                         }
                     }
                 }
             });
-
-            if (!childModified) {
-                 console.log(`  - Child ${child.id} (${child.type}) was not modified by rules for '${property}=${value}'.`);
-            }
-            // Return the potentially modified state of the child for the new array
             return currentChildState;
         });
-
-        console.log(`%c[Settings Update - ATOMIC] Finished calculating child modifications for parent clone's content.`, 'color: orange;');
-    } else if (settingDefinition.affectsChildren) {
-        console.log(`%c[Settings Update - ATOMIC] Skipping child updates for ${property}: Element content is not an array.`, 'color: grey;');
+         console.log(`%c[Custom Setting Update - ATOMIC] Applied child modifications.`, 'color: orange;');
     }
 
-    // --- 5. Dispatch a SINGLE update with the modified parent clone ---
-    console.log(`%c[Settings Update - ATOMIC] Dispatching SINGLE update for element ${elementClone.id}...`, 'color: purple; font-weight: bold;');
-    console.log(`%c[Settings Update - ATOMIC] Final Payload:`, 'color: purple;', elementClone);
-    dispatch({
-        type: 'UPDATE_ELEMENT',
-        payload: { elementDetails: elementClone }, // Dispatch the fully modified clone
-    });
-    
-    console.log(`%c[Settings Update - ATOMIC] Finished: ${property}`, 'color: blue; font-weight: bold;');
+    // Dispatch the single atomic update
+    console.log(`%c[Custom Setting Update - ATOMIC] Dispatching SINGLE update...`, 'color: purple; font-weight: bold;');
+    dispatch({ type: 'UPDATE_ELEMENT', payload: { elementDetails: elementClone } });
+    console.log(`%c[Custom Setting Update - ATOMIC] Finished: ${property}`, 'color: blue; font-weight: bold;');
   };
 
-  
-
-  const handleDeleteElement = () => {
-    dispatch({
-      type: 'DELETE_ELEMENT',
-      payload: {
-        elementDetails: { ...selectedElement },
-      },
-    })
-  }
-
-  // --- Content Change Handler (NEW) ---
-  const handleContentChange = (property: string, value: any) => {
+  // --- Handler for Editor Actions ---
+  const handleEditorAction = (action: EditorActionDefinition) => {
+      console.log(`%c[Editor Action] Triggered: ${action.id} (${action.actionType})`, 'color: magenta; font-weight: bold;');
       if (!selectedElement) return;
-
-      // Ensure content is an object before updating
-      if (typeof selectedElement.content === 'object' && !Array.isArray(selectedElement.content)) {
-            dispatch({
-                type: 'UPDATE_ELEMENT',
-                payload: {
-                    elementDetails: {
-                        ...selectedElement,
-                        content: {
-                            ...selectedElement.content,
-                            [property]: value,
-                        }
-                    }
-                }
-            });
-      } else {
-           console.warn(`Cannot update content property '${property}' for element ${selectedElement.id} - content is not an object.`);
+      switch (action.actionType) {
+          case 'addChild': {
+              const elementTypeToAdd = action.payload?.elementTypeToAdd;
+              if (!elementTypeToAdd) return;
+              const newElement = createDefaultElement(elementTypeToAdd, selectedElement.id);
+              if (newElement) {
+                  console.log(`%c[Editor Action] Dispatching ADD_ELEMENT...`, 'color: magenta;');
+                  dispatch({ type: 'ADD_ELEMENT', payload: { containerId: selectedElement.id, elementDetails: newElement } });
+              }
+              break;
+          }
+          default: console.warn(`[Editor Action] Unhandled action type: ${action.actionType}`);
       }
   };
+
+  const handleContentChange = (property: string, value: any) => {
+    console.log(`%c[Content Update] Property: ${property}, Value: ${JSON.stringify(value)}`, 'color: brown;');
+    if (!selectedElement) {
+        console.warn("[Content Update] No element selected.");
+        return;
+    }
+    // Ensure content is an object (relevant for leaf components) before updating
+    if (typeof selectedElement.content === 'object' && !Array.isArray(selectedElement.content) && selectedElement.content !== null) {
+          // Clone the current content object
+          const updatedContent = {
+              ...selectedElement.content,
+              [property]: value, // Update the specific property
+          };
+          // Dispatch update for the element with the new content object
+          dispatch({
+              type: 'UPDATE_ELEMENT',
+              payload: {
+                  elementDetails: {
+                      ...selectedElement, // Keep other element props
+                      content: updatedContent // Set the updated content object
+                  }
+              }
+          });
+           console.log(`%c[Content Update] Dispatched update for ${property}.`, 'color: brown;');
+    } else {
+         console.warn(`[Content Update] Cannot update content property '${property}' for element ${selectedElement.id} - content is not an object or is null.`);
+    }
+  };
+
+  // Conditional rendering checks
+  const showContentFields = (componentConfig?.contentFields?.length || 0) > 0;
+  const showCustomSettings = (componentConfig?.customSettingFields?.length || 0) > 0;
+  const showEditorActions = (componentConfig?.editorActions?.length || 0) > 0;
+  const showStyles = !!componentConfig?.styles; // Basic check if styles object exists
+  const showFlexbox = selectedElement.type === 'container' || componentConfig?.styles?.display === 'flex';
 
   return (
     <div className="flex flex-col h-full">
@@ -254,7 +259,12 @@ const SettingsTab = () => {
           <p className="text-xs text-muted-foreground">{selectedElement.id}</p>
         </div>
         <button
-          onClick={handleDeleteElement}
+          onClick={() => dispatch({
+            type: 'DELETE_ELEMENT',
+            payload: {
+              elementDetails: { ...selectedElement },
+            },
+          })}
           className={cn(
             'p-2 text-destructive hover:bg-destructive/10 rounded transition-colors',
             'flex items-center gap-1'
@@ -266,154 +276,58 @@ const SettingsTab = () => {
       </div>
 
       <div className="flex-1 overflow-auto px-2 py-2">
-      <Accordion
-        type="multiple"
-        defaultValue={activeSection}
-        onValueChange={setActiveSection}
-        className="w-full"
-      >
-        <AccordionItem value="typography" className="border-b">
-          <AccordionTrigger className="py-2 text-sm hover:no-underline">
-            Typography
-            </AccordionTrigger>
-          <AccordionContent className="pb-2">
-            <TypographySettings 
-              element={selectedElement} 
-              onStyleChange={handleStyleChange}
-              currentDevice={currentDevice}
-            />
-            </AccordionContent>
-          </AccordionItem>
+        <Accordion type="multiple" defaultValue={activeSection} onValueChange={setActiveSection} className="w-full">
 
-        <AccordionItem value="dimensions" className="border-b">
-          <AccordionTrigger className="py-2 text-sm hover:no-underline">
-            Dimensions
-          </AccordionTrigger>
-          <AccordionContent className="pb-2">
-            <DimensionsSettings 
-              element={selectedElement} 
-              onStyleChange={handleStyleChange}
-              currentDevice={currentDevice}
-            />
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="decorations" className="border-b">
-          <AccordionTrigger className="py-2 text-sm hover:no-underline">
-            Decorations
-          </AccordionTrigger>
-          <AccordionContent className="pb-2">
-            <DecorationsSettings 
-              element={selectedElement} 
-              onStyleChange={handleStyleChange}
-              currentDevice={currentDevice}
-            />
-          </AccordionContent>
-        </AccordionItem>
-
-        {(selectedElement.type === 'container' || componentConfig?.styles?.display === 'flex') && (
-          <AccordionItem value="flexbox" className="border-b">
-            <AccordionTrigger className="py-2 text-sm hover:no-underline">
-              Flexbox
-            </AccordionTrigger>
-            <AccordionContent className="pb-2">
-              <div className="grid gap-4 px-1">
-<div className="flex flex-col gap-2">
-                  <label className="text-muted-foreground text-sm">Direction</label>
-    <select
-                    className="border p-2 rounded-md"
-                    value={selectedElement.styles.flexDirection as string || 'row'}
-                    onChange={(e) => handleStyleChange('flexDirection', e.target.value)}
-                  >
-                    <option value="row">Row</option>
-                    <option value="column">Column</option>
-                    <option value="row-reverse">Row Reverse</option>
-                    <option value="column-reverse">Column Reverse</option>
-    </select>
-</div>
-            
-                <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col gap-2">
-                    <label className="text-muted-foreground text-sm">Justify Content</label>
-              <select
-                className="border p-2 rounded-md"
-                        value={selectedElement.styles.justifyContent as string || 'flex-start'}
-                        onChange={(e) => handleStyleChange('justifyContent', e.target.value)}
-                      >
-                        <option value="flex-start">Start</option>
-                        <option value="flex-end">End</option>
-                        <option value="center">Center</option>
-                        <option value="space-between">Space Between</option>
-                        <option value="space-around">Space Around</option>
-                        <option value="space-evenly">Space Evenly</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-                      <label className="text-muted-foreground text-sm">Align Items</label>
-                <select
-                        className="border p-2 rounded-md"
-                        value={selectedElement.styles.alignItems as string || 'stretch'}
-                        onChange={(e) => handleStyleChange('alignItems', e.target.value)}
-                      >
-                        <option value="flex-start">Start</option>
-                        <option value="flex-end">End</option>
-                        <option value="center">Center</option>
-                        <option value="stretch">Stretch</option>
-                        <option value="baseline">Baseline</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-2">
-                    <label className="text-muted-foreground text-sm">Gap</label>
-                  <input
-                      type="text"
-                      className="border p-2 rounded-md"
-                      value={selectedElement.styles.gap as string || ''}
-                      onChange={(e) => handleStyleChange('gap', e.target.value)}
-                      placeholder="0px"
+             {/* Content Section */}
+            {showContentFields && (
+               <AccordionItem value="content" className="border-b">
+                 <AccordionTrigger className="py-2 text-sm hover:no-underline">Content Fields</AccordionTrigger>
+                 <AccordionContent className="pb-0"> {/* No bottom padding for panel */}
+                    <ContentFieldsPanel
+                        element={selectedElement}
+                        config={componentConfig}
+                        onContentChange={handleContentChange}
                     />
-                  </div>
+                 </AccordionContent>
+               </AccordionItem>
+             )}
 
-                  <div className="flex flex-col gap-2">
-                    <label className="text-muted-foreground text-sm">Flex Wrap</label>
-                <select
-                      className="border p-2 rounded-md"
-                      value={selectedElement.styles.flexWrap as string || 'nowrap'}
-                      onChange={(e) => handleStyleChange('flexWrap', e.target.value)}
-                    >
-                      <option value="nowrap">No Wrap</option>
-                      <option value="wrap">Wrap</option>
-                      <option value="wrap-reverse">Wrap Reverse</option>
-                    </select>
-                  </div>
-                </div>
-          </AccordionContent>
-        </AccordionItem>
-        )}
+             {/* Custom Settings Section */}
+             {showCustomSettings && (
+               <AccordionItem value="customSettings" className="border-b">
+                 <AccordionTrigger className="py-2 text-sm hover:no-underline">Custom Settings</AccordionTrigger>
+                 <AccordionContent className="pb-0">
+                   <CustomSettingsPanel // Use renamed component
+                     element={selectedElement}
+                     config={componentConfig}
+                     customSettingsValues={selectedElement.customSettings} // Pass current values
+                     onCustomSettingChange={handleChangeCustomSetting} // Use renamed handler
+                   />
+                 </AccordionContent>
+               </AccordionItem>
+             )}
 
-        
+             {/* Actions Section */}
+             {showEditorActions && (
+                <AccordionItem value="actions" className="border-b">
+                    <AccordionTrigger className="py-2 text-sm hover:no-underline">Editor Actions</AccordionTrigger>
+                    <AccordionContent className="pb-0">
+                        <EditorActionsPanel
+                            element={selectedElement}
+                            config={componentConfig}
+                            onAction={handleEditorAction}
+                        />
+                    </AccordionContent>
+                </AccordionItem>
+            )}
 
-        {/* Combined Content & Custom Settings Section */}
-        {/* Render if either content fields OR custom setting fields exist */}
-        {(componentConfig?.contentFields?.length || 0) > 0 || (componentConfig?.customSettingFields?.length || 0) > 0 ? (
-          <AccordionItem value="custom" className="border-b">
-            <AccordionTrigger className="py-2 text-sm hover:no-underline">
-               Content & Settings {/* Combined Trigger Name */}
-            </AccordionTrigger>
-            <AccordionContent className="pb-2">
-              {/* Pass the new onContentChange prop */}
-              <CustomSettings
-                element={selectedElement}
-                customSettings={selectedElement.customSettings}
-                onContentChange={handleContentChange} // Pass the handler
-                onCustomSettingChange={handleChangeCustomValues}
-              />
-            </AccordionContent>
-          </AccordionItem>
-        ) : null}
-      </Accordion>
+            {/* --- Style Sections (Conditional) --- */}
+            {showStyles && ( <AccordionItem value="typography" className="border-b"><AccordionTrigger className="py-2 text-sm hover:no-underline">Typography</AccordionTrigger><AccordionContent className="pb-2"><TypographySettings element={selectedElement} onStyleChange={handleStyleChange} currentDevice={currentDevice}/></AccordionContent></AccordionItem> )}
+            {showStyles && ( <AccordionItem value="dimensions" className="border-b"><AccordionTrigger className="py-2 text-sm hover:no-underline">Dimensions</AccordionTrigger><AccordionContent className="pb-2"><DimensionsSettings element={selectedElement} onStyleChange={handleStyleChange} currentDevice={currentDevice}/></AccordionContent></AccordionItem> )}
+            {showStyles && ( <AccordionItem value="decorations" className="border-b"><AccordionTrigger className="py-2 text-sm hover:no-underline">Decorations</AccordionTrigger><AccordionContent className="pb-2"><DecorationsSettings element={selectedElement} onStyleChange={handleStyleChange} currentDevice={currentDevice}/></AccordionContent></AccordionItem> )}
+            {showFlexbox && ( <AccordionItem value="flexbox" className="border-b"><AccordionTrigger className="py-2 text-sm hover:no-underline">Flexbox</AccordionTrigger><AccordionContent className="pb-2"><div className="grid gap-4 px-1">{/* ... flex controls ... */}<div className="flex flex-col gap-2"><label className="text-muted-foreground text-sm">Direction</label><select className="border p-2 rounded-md" value={selectedElement.styles.flexDirection as string || 'row'} onChange={(e) => handleStyleChange('flexDirection', e.target.value)}><option value="row">Row</option><option value="column">Column</option><option value="row-reverse">Row Reverse</option><option value="column-reverse">Column Reverse</option></select></div><div className="grid grid-cols-2 gap-2"><div className="flex flex-col gap-2"><label className="text-muted-foreground text-sm">Justify Content</label><select className="border p-2 rounded-md" value={selectedElement.styles.justifyContent as string || 'flex-start'} onChange={(e) => handleStyleChange('justifyContent', e.target.value)}><option value="flex-start">Start</option><option value="flex-end">End</option><option value="center">Center</option><option value="space-between">Space Between</option><option value="space-around">Space Around</option><option value="space-evenly">Space Evenly</option></select></div><div className="flex flex-col gap-2"><label className="text-muted-foreground text-sm">Align Items</label><select className="border p-2 rounded-md" value={selectedElement.styles.alignItems as string || 'stretch'} onChange={(e) => handleStyleChange('alignItems', e.target.value)}><option value="flex-start">Start</option><option value="flex-end">End</option><option value="center">Center</option><option value="stretch">Stretch</option><option value="baseline">Baseline</option></select></div></div><div className="flex flex-col gap-2"><label className="text-muted-foreground text-sm">Gap</label><input type="text" className="border p-2 rounded-md" value={selectedElement.styles.gap as string || ''} onChange={(e) => handleStyleChange('gap', e.target.value)} placeholder="0px"/></div><div className="flex flex-col gap-2"><label className="text-muted-foreground text-sm">Flex Wrap</label><select className="border p-2 rounded-md" value={selectedElement.styles.flexWrap as string || 'nowrap'} onChange={(e) => handleStyleChange('flexWrap', e.target.value)}><option value="nowrap">No Wrap</option><option value="wrap">Wrap</option><option value="wrap-reverse">Wrap Reverse</option></select></div></div></AccordionContent></AccordionItem> )} 
+
+        </Accordion>
       </div>
     </div>
   )

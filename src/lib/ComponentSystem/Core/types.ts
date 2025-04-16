@@ -15,6 +15,17 @@ export interface BaseComponentProps {
   isChildOfContainer?: boolean; // Optional prop passed by HOC
 }
 
+export interface EditorActionDefinition {
+  id: string;
+  label: string;
+ actionType: 'addChild';
+ payload?: {
+  elementTypeToAdd: EditorBtns;
+ }
+}
+
+
+
 /**
  * Helper functions and state provided to editor components via HOC/hooks.
  */
@@ -47,8 +58,9 @@ export interface EditorComponentHelpers {
 export interface ContentFieldDefinition {
   id: string; // Corresponds to key in EditorElement.content object
   label: string;
-  type: 'text' | 'textarea' | 'image' | 'icon' | 'link'; // Add more as needed
+  type: 'text' | 'textarea' | 'image' | 'icon' | 'link' | 'select'; // Add more as needed
   defaultValue?: any;
+  options?: { value: string | number | boolean; label: string }[]; // For select
 }
 
 /**
@@ -153,7 +165,10 @@ export interface ComponentConfig {
   // Definitions for the editor controls
   contentFields?: ContentFieldDefinition[];     // Defines editable content fields
   styleFields?: StyleFieldDefinition[];         // Defines controllable style properties
-  customSettingFields?: ComponentSettingDefinition[]; // Defines custom settings controls
+  customSettingFields?: ComponentSettingDefinition[];
+  editorActions?: EditorActionDefinition[];
+  
+  // Defines custom settings controls
   
   // Configuration specific to container components
   childrenConfig?: ChildrenConfig;

@@ -15,5 +15,11 @@ export type EditorBtns =
   | 'headerSection'
   | 'headerActions'
   | 'paragraph'
+  | 'productImage'
+  | 'productDescription'
+  | 'productBadge'
+  | 'productFeatureList'
+  | 'productPrice'
+  | 'productShowcaseHero'
   | null
   
